@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Mis Calificaciones</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Estudiante</div>
+            <nav>
+                <a href="dashboard_estudiante.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="mis_calificaciones.html" class="nav-link active"><i class="fas fa-star"></i> Mis Notas</a>
+                <a href="mis_asistencias.html" class="nav-link"><i class="fas fa-check-circle"></i> Mis Asistencias</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div><h1 class="top-bar-title">📝 Mis Calificaciones</h1></div>
+                <button class="btn btn-outline" onclick="descargarReporte()"><i class="fas fa-file-pdf"></i> Descargar Boletín</button>
+            </header>
+
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+            </div>
+
+            <section class="card">
+                <div class="table-container">
+                    <table><thead><tr><th>Materia</th><th>Nota 1</th><th>Nota 2</th><th>Nota 3</th><th>Promedio</th><th>Estado</th></tr></thead>
+                    <tbody id="tablaNotas"><tr><td colspan="6" class="text-center">Cargando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let estudianteId = null;
+        
+        async function loadCalificaciones() {
+            const user = window.api.getCurrentUser();
+            if (user && user.estudiante) {
+                estudianteId = user.estudiante.id_estudiante;
+                
+                const materiasMock = [
+                    { materia: "Matemáticas", nota1: 4.5, nota2: 4.0, nota3: 5.0, promedio: 4.5, estado: "Excelente" },
+                    { materia: "Lengua Castellana", nota1: 4.0, nota2: 4.3, nota3: 4.6, promedio: 4.3, estado: "Muy Bien" },
+                    { materia: "Ciencias Naturales", nota1: 3.8, nota2: 4.0, nota3: 4.2, promedio: 4.0, estado: "Bien" },
+                    { materia: "Sociales", nota1: 4.5, nota2: 4.7, nota3: 4.9, promedio: 4.7, estado: "Excelente" },
+                    { materia: "Inglés", nota1: 3.5, nota2: 3.8, nota3: 4.0, promedio: 3.8, estado: "Bien" }
+                ];
+                
+                let suma = 0;
+                materiasMock.forEach(m => { suma += m.promedio; });
+                const promedioGeneral = (suma / materiasMock.length).toFixed(1);
+                
+                document.getElementById('widgetsContainer').innerHTML = `
+                    <div class="widget"><div class="widget-title">Promedio General</div><div class="widget-value">${promedioGeneral}</div></div>
+                    <div class="widget"><div class="widget-title">Materias Aprobadas</div><div class="widget-value">${materiasMock.filter(m => m.promedio >= 3).length}/${materiasMock.length}</div></div>
+                `;
+                
+                const tbody = document.getElementById('tablaNotas');
+                tbody.innerHTML = materiasMock.map(m => `
+                    <tr>
+                        <td><strong>${m.materia}</strong></td>
+                        <td>${m.nota1}</td><td>${m.nota2}</td><td>${m.nota3}</td>
+                        <td><strong>${m.promedio}</strong></td>
+                        <td><span class="badge ${m.promedio >= 4.5 ? 'badge-success' : (m.promedio >= 4 ? 'badge-primary' : 'badge-warning')}">${m.estado}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        function descargarReporte() { alert('📄 Generando boletín en PDF...'); }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        loadCalificaciones();
+    </script>
+</body>
+</html>

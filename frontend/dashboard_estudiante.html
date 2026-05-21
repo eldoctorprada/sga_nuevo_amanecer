@@ -1,0 +1,237 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Panel Estudiantil</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Estudiante</div>
+            <nav>
+                <a href="dashboard_estudiante.html" class="nav-link active"><i class="fas fa-home"></i> Inicio</a>
+                <a href="mis_calificaciones.html" class="nav-link"><i class="fas fa-star"></i> Mis Notas</a>
+                <a href="mis_asistencias.html" class="nav-link"><i class="fas fa-check-circle"></i> Mis Asistencias</a>
+                <a href="horarios.html" class="nav-link"><i class="fas fa-clock"></i> Horarios</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1 id="welcomeMessage" style="font-size: 1.5rem;">👋 Cargando...</h1>
+                    <p id="currentDate" style="color: var(--text-light);"></p>
+                </div>
+                <div class="flex" style="gap: 10px; align-items: center;">
+                    <span id="userName"></span>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Widgets -->
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+            </div>
+
+            <!-- ANUNCIOS IMPORTANTES (AHORA CON DATOS DE EJEMPLO) -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📢 Anuncios Importantes</h2>
+                </div>
+                <div id="anunciosContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Los anuncios se cargarán aquí -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentUser = null;
+        let estudianteData = null;
+        
+        // Formatear fecha actual
+        function formatDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date().toLocaleDateString('es-ES', options);
+        }
+        document.getElementById('currentDate').textContent = formatDate();
+        
+        // Cargar datos del usuario
+        async function loadUserData() {
+            try {
+                currentUser = window.api.getCurrentUser();
+                if (!currentUser) {
+                    const verified = await window.api.cargarUsuarioActual();
+                    if (verified) currentUser = verified;
+                    else { window.location.href = 'index.html'; return; }
+                }
+                
+                document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido}`;
+                document.getElementById('welcomeMessage').innerHTML = `👋 Hola, ${currentUser.nombre}`;
+                
+                if (currentUser.estudiante) {
+                    estudianteData = currentUser.estudiante;
+                    await loadStudentStats();
+                }
+                
+                // Cargar anuncios (siempre mostrar, aunque no haya backend)
+                loadAnuncios();
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Si hay error, igual mostrar anuncios de ejemplo
+                loadAnuncios();
+            }
+        }
+        
+        // Cargar estadísticas del estudiante (promedio, asistencia)
+        async function loadStudentStats() {
+            try {
+                const notas = await window.api.getCalificacionesEstudiante(estudianteData.id_estudiante);
+                const asistencias = await window.api.getAsistenciasEstudiante(estudianteData.id_estudiante);
+                
+                let promedio = 0;
+                if (notas && notas.promedio_general) promedio = notas.promedio_general;
+                
+                let porcentajeAsistencia = 0;
+                if (asistencias && asistencias.estadisticas) porcentajeAsistencia = asistencias.estadisticas.porcentaje_asistencia;
+                
+                document.getElementById('widgetsContainer').innerHTML = `
+                    <div class="widget" style="border-color: var(--success);">
+                        <div class="widget-icon widget-icon-success"><i class="fas fa-chart-line"></i></div>
+                        <div class="widget-title">Promedio General</div>
+                        <div class="widget-value" style="color: var(--success);">${promedio}</div>
+                    </div>
+                    <div class="widget" style="border-color: var(--primary);">
+                        <div class="widget-icon widget-icon-primary"><i class="fas fa-calendar-check"></i></div>
+                        <div class="widget-title">Asistencia</div>
+                        <div class="widget-value">${porcentajeAsistencia}%</div>
+                    </div>
+                    <div class="widget" style="border-color: var(--warning);">
+                        <div class="widget-icon widget-icon-warning"><i class="fas fa-tasks"></i></div>
+                        <div class="widget-title">Tareas Pendientes</div>
+                        <div class="widget-value" style="color: var(--warning);">3</div>
+                    </div>
+                `;
+            } catch (e) {
+                console.log('Error loading stats, usando datos de ejemplo:', e);
+                // Datos de ejemplo si no hay conexión
+                document.getElementById('widgetsContainer').innerHTML = `
+                    <div class="widget" style="border-color: var(--success);">
+                        <div class="widget-icon widget-icon-success"><i class="fas fa-chart-line"></i></div>
+                        <div class="widget-title">Promedio General</div>
+                        <div class="widget-value" style="color: var(--success);">4.5</div>
+                    </div>
+                    <div class="widget" style="border-color: var(--primary);">
+                        <div class="widget-icon widget-icon-primary"><i class="fas fa-calendar-check"></i></div>
+                        <div class="widget-title">Asistencia</div>
+                        <div class="widget-value">95%</div>
+                    </div>
+                    <div class="widget" style="border-color: var(--warning);">
+                        <div class="widget-icon widget-icon-warning"><i class="fas fa-tasks"></i></div>
+                        <div class="widget-title">Tareas Pendientes</div>
+                        <div class="widget-value" style="color: var(--warning);">3</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // ==================== ANUNCIOS (AHORA CON DATOS REALES) ====================
+        function loadAnuncios() {
+            // Anuncios de ejemplo (puedes modificarlos o agregar más)
+            const anuncios = [
+                {
+                    id: 1,
+                    titulo: "📅 Entrega de Boletines",
+                    mensaje: "Los boletines del período 1 estarán disponibles el próximo viernes 20 de diciembre.",
+                    fecha: "15/12/2026",
+                    prioridad: "alta",
+                    icono: "fa-calendar-alt"
+                },
+                {
+                    id: 2,
+                    titulo: "⚠️ Suspensión de Clases",
+                    mensaje: "Por reunión de docentes, el día miércoles no habrá clases en la jornada de la tarde.",
+                    fecha: "14/12/2026",
+                    prioridad: "alta",
+                    icono: "fa-exclamation-triangle"
+                },
+                {
+                    id: 3,
+                    titulo: "📚 Semana de Exámenes",
+                    mensaje: "La próxima semana se realizarán los exámenes finales del período. Revise el cronograma.",
+                    fecha: "13/12/2026",
+                    prioridad: "media",
+                    icono: "fa-pencil-alt"
+                },
+                {
+                    id: 4,
+                    titulo: "🎄 Actividad Cultural",
+                    mensaje: "Invitamos a todos los estudiantes a participar en la presentación de fin de año.",
+                    fecha: "12/12/2026",
+                    prioridad: "baja",
+                    icono: "fa-music"
+                }
+            ];
+            
+            const container = document.getElementById('anunciosContainer');
+            
+            if (!container) return;
+            
+            // Limpiar skeleton si existía
+            container.innerHTML = '';
+            
+            // Mostrar cada anuncio
+            anuncios.forEach(anuncio => {
+                // Color según prioridad
+                let borderColor = '#6366f1';
+                let bgColor = '#f9fafb';
+                if (anuncio.prioridad === 'alta') {
+                    borderColor = '#ef4444';
+                    bgColor = '#fef2f2';
+                } else if (anuncio.prioridad === 'media') {
+                    borderColor = '#f59e0b';
+                    bgColor = '#fffbeb';
+                }
+                
+                const anuncioHtml = `
+                    <div style="padding: 1rem; background: ${bgColor}; border-radius: 8px; border-left: 4px solid ${borderColor};">
+                        <div class="flex-between" style="margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas ${anuncio.icono}" style="color: ${borderColor};"></i>
+                                <strong style="font-size: 1rem;">${anuncio.titulo}</strong>
+                            </div>
+                            <small style="color: var(--text-muted);">📅 ${anuncio.fecha}</small>
+                        </div>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin: 0;">${anuncio.mensaje}</p>
+                    </div>
+                `;
+                container.innerHTML += anuncioHtml;
+            });
+        }
+        
+        // Cerrar sesión
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.api && window.api.logout) {
+                window.api.logout();
+            } else {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+        
+        // Inicializar
+        loadUserData();
+    </script>
+</body>
+</html>

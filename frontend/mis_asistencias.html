@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Mis Asistencias</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Estudiante</div>
+            <nav>
+                <a href="dashboard_estudiante.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="mis_calificaciones.html" class="nav-link"><i class="fas fa-star"></i> Mis Notas</a>
+                <a href="mis_asistencias.html" class="nav-link active"><i class="fas fa-check-circle"></i> Mis Asistencias</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div><h1 class="top-bar-title">✅ Mis Asistencias</h1></div>
+                <button class="btn btn-primary" onclick="solicitarJustificacion()"><i class="fas fa-envelope"></i> Solicitar Justificación</button>
+            </header>
+
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+                <div class="skeleton" style="height: 100px;"></div>
+            </div>
+
+            <section class="card">
+                <div class="table-container">
+                    <table><thead><tr><th>Fecha</th><th>Materia</th><th>Estado</th><th>Justificación</th></tr></thead>
+                    <tbody id="tablaAsistencias"><tr><td colspan="4" class="text-center">Cargando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function loadAsistencias() {
+            const asistenciasMock = [
+                { fecha: "15/03/2026", materia: "Matemáticas", presente: true, justificacion: null },
+                { fecha: "14/03/2026", materia: "Lengua", presente: true, justificacion: null },
+                { fecha: "13/03/2026", materia: "Ciencias", presente: false, justificacion: "Cita médica" },
+                { fecha: "12/03/2026", materia: "Sociales", presente: true, justificacion: null }
+            ];
+            
+            let presentes = asistenciasMock.filter(a => a.presente).length;
+            let porcentaje = (presentes / asistenciasMock.length * 100).toFixed(1);
+            
+            document.getElementById('widgetsContainer').innerHTML = `
+                <div class="widget"><div class="widget-title">Días Lectivos</div><div class="widget-value">${asistenciasMock.length}</div></div>
+                <div class="widget"><div class="widget-title">Presentes</div><div class="widget-value">${presentes}</div></div>
+                <div class="widget"><div class="widget-title">Ausentes</div><div class="widget-value">${asistenciasMock.length - presentes}</div></div>
+                <div class="widget"><div class="widget-title">Porcentaje</div><div class="widget-value">${porcentaje}%</div></div>
+            `;
+            
+            const tbody = document.getElementById('tablaAsistencias');
+            tbody.innerHTML = asistenciasMock.map(a => `
+                <tr>
+                    <td>${a.fecha}</td><td>${a.materia}</td>
+                    <td><span class="badge ${a.presente ? 'badge-success' : 'badge-danger'}">${a.presente ? '✓ Presente' : '✗ Ausente'}</span></td>
+                    <td>${a.justificacion || '-'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function solicitarJustificacion() { alert('✉️ Redirigiendo a comunicaciones para solicitar justificación...'); }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        loadAsistencias();
+    </script>
+</body>
+</html>

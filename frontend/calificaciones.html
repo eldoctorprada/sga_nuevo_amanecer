@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Calificaciones</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Docente</div>
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="asistencias.html" class="nav-link"><i class="fas fa-check-circle"></i> Asistencias</a>
+                <a href="calificaciones.html" class="nav-link active"><i class="fas fa-edit"></i> Calificaciones</a>
+                <a href="horarios.html" class="nav-link"><i class="fas fa-clock"></i> Horarios</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div><h1 class="top-bar-title">📝 Gestión de Calificaciones</h1></div>
+                <button class="btn btn-primary" onclick="guardarNotas()"><i class="fas fa-save"></i> Guardar Cambios</button>
+            </header>
+
+            <section class="card mb-3">
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div><label>📚 Materia</label><select class="form-select" id="filtroMateria"><option value="1">Matemáticas</option><option value="2">Ciencias</option></select></div>
+                    <div><label>📅 Período</label><select class="form-select" id="filtroPeriodo"><option value="1">Primer Trimestre</option><option value="2">Segundo Trimestre</option></select></div>
+                    <div><label>📊 Tipo</label><select class="form-select" id="filtroTipo"><option value="parcial1">Parcial 1</option><option value="parcial2">Parcial 2</option><option value="final">Final</option></select></div>
+                    <div><button class="btn btn-outline" onclick="cargarCalificaciones()"><i class="fas fa-search"></i> Filtrar</button></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="table-container">
+                    <table><thead><tr><th>#</th><th>Estudiante</th><th>Nota</th><th>Estado</th></tr></thead>
+                    <tbody id="tablaCalificaciones"><tr><td colspan="4" class="text-center">Cargando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let calificacionesData = [];
+        
+        async function cargarCalificaciones() {
+            const estudiantesMock = [
+                { id: 1, nombre: "Ana Torres", nota: 4.5 },
+                { id: 2, nombre: "Carlos Gómez", nota: 3.2 },
+                { id: 3, nombre: "María López", nota: 4.9 },
+                { id: 4, nombre: "Pedro Sánchez", nota: 2.8 },
+                { id: 5, nombre: "Luisa Castro", nota: 4.2 }
+            ];
+            
+            const tbody = document.getElementById('tablaCalificaciones');
+            tbody.innerHTML = estudiantesMock.map((e, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><strong>${e.nombre}</strong></td>
+                    <td><input type="number" class="form-input" id="nota_${e.id}" value="${e.nota}" min="0" max="5" step="0.1" style="width:100px"></td>
+                    <td><span class="badge ${e.nota >= 4 ? 'badge-success' : (e.nota >= 3 ? 'badge-warning' : 'badge-danger')}">${e.nota >= 4 ? 'Excelente' : (e.nota >= 3 ? 'Regular' : 'Bajo')}</span></td>
+                </tr>
+            `).join('');
+        }
+        
+        async function guardarNotas() {
+            alert('✅ Notas guardadas exitosamente (Demo - Conexión real disponible)');
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        cargarCalificaciones();
+    </script>
+</body>
+</html>

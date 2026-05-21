@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Gestión de Usuarios</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Admin</div>
+            <nav>
+                <a href="dashboard_admin.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="usuarios.html" class="nav-link active"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="reportes.html" class="nav-link"><i class="fas fa-chart-line"></i> Reportes</a>
+                <a href="configuracion.html" class="nav-link"><i class="fas fa-cog"></i> Configuración</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1 class="top-bar-title">👥 Gestión de Usuarios</h1>
+                    <p class="top-bar-subtitle">Administra estudiantes, docentes y personal administrativo</p>
+                </div>
+                <button class="btn btn-primary" onclick="abrirModalNuevo()">
+                    <i class="fas fa-plus"></i> Nuevo Usuario
+                </button>
+            </header>
+
+            <section class="card mb-3">
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">🔍 Buscar</label>
+                        <input type="text" class="form-input" id="buscarInput" placeholder="Nombre o email...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🎭 Rol</label>
+                        <select class="form-select" id="filtroRol">
+                            <option value="">Todos</option>
+                            <option value="estudiante">Estudiante</option>
+                            <option value="docente">Docente</option>
+                            <option value="administrativo">Administrativo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🟢 Estado</label>
+                        <select class="form-select" id="filtroEstado">
+                            <option value="">Todos</option>
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-outline" onclick="cargarUsuarios()">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Email</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuarios">
+                            <tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL NUEVO USUARIO -->
+    <div class="modal-overlay" id="modalNuevo">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Nuevo Usuario</h3>
+                <button class="modal-close" onclick="cerrarModalNuevo()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label form-label-required">Tipo de Usuario</label>
+                    <select class="form-select" id="nuevoTipo">
+                        <option value="estudiante">🎓 Estudiante</option>
+                        <option value="docente">👨‍🏫 Docente</option>
+                        <option value="administrativo">👨‍💼 Administrativo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Nombre</label>
+                    <input type="text" class="form-input" id="nuevoNombre" placeholder="Nombre">
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Apellido</label>
+                    <input type="text" class="form-input" id="nuevoApellido" placeholder="Apellido">
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Email</label>
+                    <input type="email" class="form-input" id="nuevoEmail" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Contraseña</label>
+                    <input type="password" class="form-input" id="nuevoPassword" placeholder="••••••">
+                </div>
+                
+                <!-- Campos para ESTUDIANTE -->
+                <div id="camposEstudiante" style="display: block;">
+                    <div class="form-group">
+                        <label class="form-label form-label-required">Documento</label>
+                        <input type="text" class="form-input" id="nuevoDocumento" placeholder="Número de documento">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Nacimiento</label>
+                        <input type="date" class="form-input" id="nuevoFechaNacimiento">
+                    </div>
+                </div>
+                
+                <!-- Campos para DOCENTE -->
+                <div id="camposDocente" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label form-label-required">Código Empleado</label>
+                        <input type="text" class="form-input" id="nuevoCodigo" placeholder="Ej: DOC001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Especialidad</label>
+                        <input type="text" class="form-input" id="nuevoEspecialidad" placeholder="Ej: Matemáticas">
+                    </div>
+                </div>
+                
+                <!-- Campos para ADMINISTRATIVO -->
+                <div id="camposAdmin" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label form-label-required">Cargo</label>
+                        <input type="text" class="form-input" id="nuevoCargo" placeholder="Ej: Coordinador">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Área</label>
+                        <input type="text" class="form-input" id="nuevoArea" placeholder="Ej: Administrativa">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalNuevo()">❌ Cancelar</button>
+                <button class="btn btn-primary" onclick="crearUsuario()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let usuariosData = [];
+        
+        // Mostrar/ocultar campos según tipo de usuario
+        document.getElementById('nuevoTipo').addEventListener('change', function() {
+            document.getElementById('camposEstudiante').style.display = this.value === 'estudiante' ? 'block' : 'none';
+            document.getElementById('camposDocente').style.display = this.value === 'docente' ? 'block' : 'none';
+            document.getElementById('camposAdmin').style.display = this.value === 'administrativo' ? 'block' : 'none';
+        });
+        
+        async function cargarUsuarios() {
+            const buscar = document.getElementById('buscarInput').value;
+            const rol = document.getElementById('filtroRol').value;
+            const activo = document.getElementById('filtroEstado').value;
+            
+            const filtros = {};
+            if (buscar) filtros.buscar = buscar;
+            if (rol) filtros.rol = rol;
+            if (activo) filtros.activo = activo;
+            
+            const usuarios = await window.api.getUsuarios(filtros);
+            usuariosData = usuarios;
+            
+            const tbody = document.getElementById('tablaUsuarios');
+            if (!usuarios || usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay usuarios registrados</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = usuarios.map(u => `
+                <tr>
+                    <td><strong>${u.nombre} ${u.apellido}</strong><br><small>${u.documento || u.codigo_empleado || ''}</small></td>
+                    <td><span class="badge ${u.tipo_usuario === 'estudiante' ? 'badge-info' : (u.tipo_usuario === 'docente' ? 'badge-primary' : 'badge-secondary')}">
+                        ${u.tipo_usuario === 'estudiante' ? '🎓 Estudiante' : (u.tipo_usuario === 'docente' ? '👨‍🏫 Docente' : '👨‍💼 Admin')}
+                    </span></td>
+                    <td>${u.email}</td>
+                    <td><span class="badge ${u.activo ? 'badge-success' : 'badge-danger'}">${u.activo ? '✓ Activo' : '✗ Inactivo'}</span></td>
+                    <td>${new Date(u.fecha_registro).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editarUsuario(${u.id_usuario})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="eliminarUsuario(${u.id_usuario}, '${u.nombre}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function crearUsuario() {
+            const tipo = document.getElementById('nuevoTipo').value;
+            
+            // Validar campos obligatorios
+            const nombre = document.getElementById('nuevoNombre').value;
+            const apellido = document.getElementById('nuevoApellido').value;
+            const email = document.getElementById('nuevoEmail').value;
+            const password = document.getElementById('nuevoPassword').value;
+            
+            if (!nombre || !apellido || !email || !password) {
+                alert('❌ Por favor complete todos los campos obligatorios');
+                return;
+            }
+            
+            const userData = {
+                tipo_usuario: tipo,
+                nombre: nombre,
+                apellido: apellido,
+                email: email,
+                password: password
+            };
+            
+            if (tipo === 'estudiante') {
+                const documento = document.getElementById('nuevoDocumento').value;
+                if (!documento) {
+                    alert('❌ El documento es obligatorio para estudiantes');
+                    return;
+                }
+                userData.documento = documento;
+                userData.fecha_nacimiento = document.getElementById('nuevoFechaNacimiento').value || null;
+            } else if (tipo === 'docente') {
+                const codigo = document.getElementById('nuevoCodigo').value;
+                if (!codigo) {
+                    alert('❌ El código de empleado es obligatorio para docentes');
+                    return;
+                }
+                userData.codigo_empleado = codigo;
+                userData.especialidad = document.getElementById('nuevoEspecialidad').value;
+            } else if (tipo === 'administrativo') {
+                const cargo = document.getElementById('nuevoCargo').value;
+                if (!cargo) {
+                    alert('❌ El cargo es obligatorio para administrativos');
+                    return;
+                }
+                userData.cargo = cargo;
+                userData.area = document.getElementById('nuevoArea').value;
+            }
+            
+            const result = await window.api.crearUsuario(userData);
+            if (result.success) {
+                alert('✅ Usuario creado exitosamente');
+                cerrarModalNuevo();
+                cargarUsuarios();
+            } else {
+                alert('❌ Error: ' + (result.data?.message || 'No se pudo crear el usuario'));
+            }
+        }
+        
+        function editarUsuario(id) {
+            alert('✏️ Función de edición en desarrollo');
+        }
+        
+        async function eliminarUsuario(id, nombre) {
+            if (confirm(`¿Eliminar a ${nombre}?`)) {
+                const result = await window.api.eliminarUsuario(id);
+                if (result.success) {
+                    alert('✅ Usuario eliminado');
+                    cargarUsuarios();
+                } else {
+                    alert('❌ Error al eliminar');
+                }
+            }
+        }
+        
+        function abrirModalNuevo() {
+            // Limpiar formulario
+            document.getElementById('nuevoNombre').value = '';
+            document.getElementById('nuevoApellido').value = '';
+            document.getElementById('nuevoEmail').value = '';
+            document.getElementById('nuevoPassword').value = '';
+            document.getElementById('nuevoDocumento').value = '';
+            document.getElementById('nuevoCodigo').value = '';
+            document.getElementById('nuevoCargo').value = '';
+            document.getElementById('nuevoTipo').value = 'estudiante';
+            document.getElementById('camposEstudiante').style.display = 'block';
+            document.getElementById('camposDocente').style.display = 'none';
+            document.getElementById('camposAdmin').style.display = 'none';
+            document.getElementById('modalNuevo').classList.add('active');
+        }
+        
+        function cerrarModalNuevo() {
+            document.getElementById('modalNuevo').classList.remove('active');
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            window.api.logout();
+        });
+        
+        // Cargar usuarios al iniciar
+        cargarUsuarios();
+    </script>
+</body>
+</html>

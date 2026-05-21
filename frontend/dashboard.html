@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Panel Docente</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i> SGA Nuevo Amanecer
+            </div>
+            <nav>
+                <a href="dashboard.html" class="nav-link active"><i class="fas fa-home"></i> Inicio</a>
+                <a href="asistencias.html" class="nav-link"><i class="fas fa-check-circle"></i> Asistencias</a>
+                <a href="calificaciones.html" class="nav-link"><i class="fas fa-edit"></i> Calificaciones</a>
+                <a href="horarios.html" class="nav-link"><i class="fas fa-clock"></i> Horarios</a>
+                <a href="comunicaciones.html" class="nav-link"><i class="fas fa-comments"></i> Comunicaciones</a>
+                <a href="reportes.html" class="nav-link"><i class="fas fa-chart-line"></i> Reportes</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1 id="welcomeMessage" style="font-size: 1.5rem;">👋 Cargando...</h1>
+                    <p id="currentDate" style="color: var(--text-light);"></p>
+                </div>
+                <div class="flex" style="gap: 10px; align-items: center;">
+                    <span id="userName"></span>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #ec4899); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Widgets dinámicos -->
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+            </div>
+
+            <!-- Clases de Hoy -->
+            <section class="card mb-2">
+                <div class="card-header">
+                    <h2 class="card-title">📚 Clases de Hoy</h2>
+                    <a href="horarios.html" class="btn btn-sm btn-outline">Ver horario →</a>
+                </div>
+                <div id="clasesHoyContainer" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                    <div class="skeleton" style="height: 100px; border-radius: 8px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 8px;"></div>
+                </div>
+            </section>
+
+            <!-- Acciones Rápidas -->
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">⚡ Acciones Rápidas</h2></div>
+                <div class="flex" style="gap: 1rem; flex-wrap: wrap;">
+                    <a href="asistencias.html" class="btn btn-primary"><i class="fas fa-check-circle"></i> Tomar Asistencia</a>
+                    <a href="calificaciones.html" class="btn btn-outline"><i class="fas fa-edit"></i> Ingresar Notas</a>
+                    <a href="comunicaciones.html" class="btn btn-outline"><i class="fas fa-comments"></i> Nuevo Anuncio</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // Variables
+        let currentUser = null;
+        
+        // Formatear fecha
+        function formatDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const today = new Date();
+            return today.toLocaleDateString('es-ES', options);
+        }
+        
+        // Actualizar fecha
+        document.getElementById('currentDate').textContent = formatDate();
+        
+        // Cargar datos del usuario
+        async function loadUserData() {
+            try {
+                currentUser = window.api.getCurrentUser();
+                
+                if (!currentUser) {
+                    // Intentar verificar token
+                    const verified = await window.api.cargarUsuarioActual();
+                    if (verified) {
+                        currentUser = verified;
+                    } else {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                }
+                
+                // Actualizar UI con datos del usuario
+                const nombreCompleto = `${currentUser.nombre} ${currentUser.apellido}`;
+                document.getElementById('userName').textContent = nombreCompleto;
+                
+                const hora = new Date().getHours();
+                let saludo = 'Buenas noches';
+                if (hora < 12) saludo = 'Buenos días';
+                else if (hora < 19) saludo = 'Buenas tardes';
+                
+                document.getElementById('welcomeMessage').innerHTML = `👋 ${saludo}, ${currentUser.nombre}`;
+                
+                // Cargar widgets
+                await loadWidgets();
+                
+                // Cargar clases del día
+                await loadClasesHoy();
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
+        // Cargar widgets
+        async function loadWidgets() {
+            // En una implementación real, estos datos vendrían de la API
+            // Por ahora usamos datos de demostración combinados con API
+            const widgetsHtml = `
+                <div class="widget" style="border-color: var(--primary);">
+                    <div class="widget-icon widget-icon-primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="widget-title">Estudiantes Activos</div>
+                    <div class="widget-value" id="totalEstudiantes">125</div>
+                </div>
+                <div class="widget" style="border-color: var(--warning);">
+                    <div class="widget-icon widget-icon-warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="widget-title">Asistencias Pendientes</div>
+                    <div class="widget-value" style="color: var(--warning);" id="asistenciasPendientes">0</div>
+                </div>
+                <div class="widget" style="border-color: var(--success);">
+                    <div class="widget-icon widget-icon-success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="widget-title">Promedio General</div>
+                    <div class="widget-value" style="color: var(--success);" id="promedioGeneral">4.2</div>
+                </div>
+            `;
+            document.getElementById('widgetsContainer').innerHTML = widgetsHtml;
+            
+            // Obtener estadísticas reales desde la API
+            try {
+                // Ejemplo: obtener conteo de mensajes no leídos
+                const noLeidos = await window.api.getMensajesNoLeidosCount();
+                document.getElementById('asistenciasPendientes').textContent = noLeidos;
+            } catch (e) {
+                console.log('Error loading stats:', e);
+            }
+        }
+        
+        // Cargar clases del día
+        async function loadClasesHoy() {
+            // En una implementación real, esto vendría de la API /horarios/docente/{id}
+            const clasesHtml = `
+                <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="flex-between">
+                        <strong>08:00 - 10:00</strong>
+                        <span class="badge badge-success">Completada</span>
+                    </div>
+                    <h4 style="margin: 0.5rem 0;">Matemáticas - Grado 5° A</h4>
+                    <p style="color: var(--text-light); font-size: 0.9rem;">📍 Aula 201 • 25 estudiantes</p>
+                </div>
+                <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="flex-between">
+                        <strong>10:30 - 12:30</strong>
+                        <span class="badge badge-warning">Pendiente</span>
+                    </div>
+                    <h4 style="margin: 0.5rem 0;">Ciencias Naturales - Grado 5° B</h4>
+                    <p style="color: var(--text-light); font-size: 0.9rem;">📍 Laboratorio • 23 estudiantes</p>
+                </div>
+            `;
+            document.getElementById('clasesHoyContainer').innerHTML = clasesHtml;
+        }
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.api.logout();
+        });
+        
+        // Inicializar
+        loadUserData();
+        
+        // Verificar token periódicamente (cada 5 minutos)
+        setInterval(async () => {
+            const isValid = await window.api.cargarUsuarioActual();
+            if (!isValid) {
+                window.api.logout();
+            }
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

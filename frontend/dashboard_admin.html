@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Panel Administrativo</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Admin</div>
+            <nav>
+                <a href="dashboard_admin.html" class="nav-link active"><i class="fas fa-home"></i> Inicio</a>
+                <a href="usuarios.html" class="nav-link"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="reportes.html" class="nav-link"><i class="fas fa-chart-line"></i> Reportes</a>
+                <a href="configuracion.html" class="nav-link"><i class="fas fa-cog"></i> Configuración</a>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-chalkboard-teacher"></i> Vista Docente</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1 id="welcomeMessage" style="font-size: 1.5rem;">👋 Cargando...</h1>
+                    <p id="currentDate" style="color: var(--text-light);">Panel de Control Institucional</p>
+                </div>
+                <div class="flex" style="gap: 10px; align-items: center;">
+                    <span id="userName"></span>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #ec4899); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="widgets-grid" id="widgetsContainer">
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+            </div>
+            
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">🕒 Actividad Reciente</h2></div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Usuario</th><th>Acción</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody id="actividadReciente">
+                            <tr><td colspan="3" class="text-center">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentUser = null;
+        
+        function formatDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date().toLocaleDateString('es-ES', options);
+        }
+        
+        document.getElementById('currentDate').innerHTML = formatDate() + ' • Panel de Control Institucional';
+        
+        async function loadUserData() {
+            try {
+                currentUser = window.api.getCurrentUser();
+                if (!currentUser) {
+                    const verified = await window.api.cargarUsuarioActual();
+                    if (verified) currentUser = verified;
+                    else { window.location.href = 'index.html'; return; }
+                }
+                
+                document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido}`;
+                const hora = new Date().getHours();
+                let saludo = hora < 12 ? 'Buenos días' : (hora < 19 ? 'Buenas tardes' : 'Buenas noches');
+                document.getElementById('welcomeMessage').innerHTML = `👋 ${saludo}, ${currentUser.nombre}`;
+                
+                await loadStats();
+                await loadRecentActivity();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const stats = await window.api.getEstadisticasUsuarios();
+                if (stats && stats.estadisticas) {
+                    const data = stats.estadisticas;
+                    document.getElementById('widgetsContainer').innerHTML = `
+                        <div class="widget"><div class="widget-title">👥 Total Usuarios</div><div class="widget-value">${data.total_usuarios}</div></div>
+                        <div class="widget" style="border-color: var(--success);"><div class="widget-title">🎓 Estudiantes Activos</div><div class="widget-value" style="color: var(--success);">${data.estudiantes_activos}</div></div>
+                        <div class="widget" style="border-color: var(--primary);"><div class="widget-title">👨‍🏫 Docentes Activos</div><div class="widget-value" style="color: var(--primary);">${data.docentes_activos}</div></div>
+                        <div class="widget" style="border-color: var(--warning);"><div class="widget-title">📊 Reportes Pendientes</div><div class="widget-value" style="color: var(--warning);">0</div></div>
+                    `;
+                }
+            } catch (e) { console.log('Error loading stats:', e); }
+        }
+        
+        async function loadRecentActivity() {
+            const tbody = document.getElementById('actividadReciente');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay actividad reciente</td></tr>';
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        
+        loadUserData();
+        setInterval(async () => { if (!await window.api.cargarUsuarioActual()) window.api.logout(); }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

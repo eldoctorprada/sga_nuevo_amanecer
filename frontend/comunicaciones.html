@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Comunicaciones</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA</div>
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="comunicaciones.html" class="nav-link active"><i class="fas fa-comments"></i> Comunicaciones</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div><h1 class="top-bar-title">💬 Comunicaciones Internas</h1></div>
+                <button class="btn btn-primary" onclick="abrirModalMensaje()"><i class="fas fa-plus"></i> Nuevo Mensaje</button>
+            </header>
+
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">📥 Mensajes Recientes</h2></div>
+                <div id="mensajesLista" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="skeleton" style="height: 80px;"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Mensaje -->
+    <div class="modal-overlay" id="modalMensaje">
+        <div class="modal">
+            <div class="modal-header"><h3>✉️ Nuevo Mensaje</h3><button class="modal-close" onclick="cerrarModalMensaje()">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Para:</label><select class="form-select" id="destinatario"><option value="2">Coordinación Académica</option><option value="3">Prof. Ana García</option></select></div>
+                <div class="form-group"><label>Asunto:</label><input type="text" class="form-input" id="asuntoMensaje"></div>
+                <div class="form-group"><label>Mensaje:</label><textarea class="form-textarea" id="contenidoMensaje" rows="5"></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalMensaje()">Cancelar</button>
+                <button class="btn btn-primary" onclick="enviarMensaje()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function cargarMensajes() {
+            const mensajesMock = [
+                { remitente: "Coordinación Académica", asunto: "Reunión de profesores", fecha: "Hoy, 10:30 AM", leido: false },
+                { remitente: "Padre de Familia", asunto: "Justificación de inasistencia", fecha: "Ayer, 4:15 PM", leido: true }
+            ];
+            
+            document.getElementById('mensajesLista').innerHTML = mensajesMock.map(m => `
+                <div style="padding:1rem; border:1px solid var(--border); border-radius:8px; background:${!m.leido ? '#f0f9ff' : 'white'}">
+                    <div class="flex-between"><strong>${m.remitente}</strong><small>${m.fecha}</small></div>
+                    <h4 style="margin:0.5rem 0">${m.asunto}</h4>
+                </div>
+            `).join('');
+        }
+        
+        async function enviarMensaje() {
+            alert('✅ Mensaje enviado exitosamente');
+            cerrarModalMensaje();
+        }
+        
+        function abrirModalMensaje() { document.getElementById('modalMensaje').classList.add('active'); }
+        function cerrarModalMensaje() { document.getElementById('modalMensaje').classList.remove('active'); }
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        cargarMensajes();
+    </script>
+</body>
+</html>

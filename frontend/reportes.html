@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Reportes</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-graduation-cap"></i> SGA Admin</div>
+            <nav>
+                <a href="dashboard_admin.html" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="usuarios.html" class="nav-link"><i class="fas fa-users"></i> Usuarios</a>
+                <a href="reportes.html" class="nav-link active"><i class="fas fa-chart-line"></i> Reportes</a>
+                <a href="#" id="logoutBtn" class="nav-link" style="color: var(--danger); margin-top: auto;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div><h1 class="top-bar-title">📈 Reportes Institucionales</h1></div>
+            </header>
+
+            <section class="card mb-3">
+                <div class="card-header"><h2 class="card-title">🔍 Generar Nuevo Reporte</h2></div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div><label>Tipo de Reporte</label><select class="form-select"><option>Rendimiento Académico</option><option>Control de Asistencia</option></select></div>
+                    <div><label>Grado</label><select class="form-select"><option>Todos</option><option>Quinto</option></select></div>
+                    <div><label>Período</label><select class="form-select"><option>2026-01</option></select></div>
+                    <div><button class="btn btn-primary" onclick="generarReporte()"><i class="fas fa-search"></i> Generar Reporte</button></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header"><h2 class="card-title">📋 Tipos de Reportes</h2></div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <div class="card"><h4>🎓 Boletín de Calificaciones</h4><button class="btn btn-sm btn-outline">PDF</button></div>
+                    <div class="card"><h4>✅ Control de Asistencia</h4><button class="btn btn-sm btn-outline">PDF</button></div>
+                    <div class="card"><h4>📊 Estadísticas</h4><button class="btn btn-sm btn-outline">Excel</button></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        function generarReporte() { alert('🔄 Generando reporte...'); }
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+    </script>
+</body>
+</html>

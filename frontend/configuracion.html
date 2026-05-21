@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Configuración del Sistema</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-graduation-cap"></i> SGA Admin
+            </div>
+            <nav class="nav-menu">
+                <a href="dashboard_admin.html" class="nav-link">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+                <a href="usuarios.html" class="nav-link">
+                    <i class="fas fa-users"></i> Usuarios
+                </a>
+                <a href="reportes.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i> Reportes
+                </a>
+                <a href="configuracion.html" class="nav-link active">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-chalkboard-teacher"></i> Vista Docente
+                </a>
+                <div class="nav-divider"></div>
+                <a href="index.html" class="nav-link" style="color: var(--danger);">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div>
+                    <h1 class="top-bar-title">⚙️ Configuración del Sistema</h1>
+                    <p class="top-bar-subtitle">Gestione los parámetros globales de la plataforma</p>
+                </div>
+            </header>
+
+            <div class="card mb-3">
+                <div class="flex" style="gap: 0.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0; overflow-x: auto;">
+                    <button class="btn btn-outline active" style="border-bottom: none; border-radius: 12px 12px 0 0; background: var(--primary); color: white;" onclick="mostrarPestana('general')">
+                        <i class="fas fa-home"></i> 🏠 General
+                    </button>
+                    <button class="btn btn-outline" style="border-bottom: none; border-radius: 12px 12px 0 0;" onclick="mostrarPestana('academico')">
+                        <i class="fas fa-book"></i> 📚 Académico
+                    </button>
+                    <button class="btn btn-outline" style="border-bottom: none; border-radius: 12px 12px 0 0;" onclick="mostrarPestana('seguridad')">
+                        <i class="fas fa-shield-alt"></i> 🔒 Seguridad
+                    </button>
+                    <button class="btn btn-outline" style="border-bottom: none; border-radius: 12px 12px 0 0;" onclick="mostrarPestana('notificaciones')">
+                        <i class="fas fa-bell"></i> 🔔 Notificaciones
+                    </button>
+                </div>
+            </div>
+
+            <section class="card mb-3" id="pestana-general">
+                <div class="card-header">
+                    <h2 class="card-title">🏠 Configuración General</h2>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label form-label-required">Nombre del Sitio</label>
+                        <input type="text" class="form-input" value="SGA Nuevo Amanecer">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-required">Email de Contacto</label>
+                        <input type="email" class="form-input" value="contacto@nuevoamanecer.edu">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Zona Horaria</label>
+                        <select class="form-select">
+                            <option>Bogotá (UTC-5)</option>
+                            <option>Ciudad de México (UTC-6)</option>
+                            <option>Lima (UTC-5)</option>
+                            <option>Buenos Aires (UTC-3)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Idioma Predeterminado</label>
+                        <select class="form-select">
+                            <option>Español</option>
+                            <option>Inglés</option>
+                            <option>Portugués</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modo Mantenimiento</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="modoMantenimiento">
+                            <label for="modoMantenimiento" class="form-check-label">Desactivar acceso temporalmente</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Registro de Usuarios</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="autoRegistro" checked>
+                            <label for="autoRegistro" class="form-check-label">Permitir auto-registro</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-outline">❌ Cancelar</button>
+                    <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar Cambios</button>
+                </div>
+            </section>
+
+            <section class="card mb-3 hidden" id="pestana-academico">
+                <div class="card-header">
+                    <h2 class="card-title">📚 Parámetros Académicos</h2>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Período Académico Actual</label>
+                        <select class="form-select">
+                            <option>2026-01 (Primer Trimestre)</option>
+                            <option>2026-02 (Segundo Trimestre)</option>
+                            <option>2026-03 (Tercer Trimestre)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Escala de Calificación</label>
+                        <select class="form-select">
+                            <option>0.0 a 5.0 (Colombia)</option>
+                            <option>0 a 100</option>
+                            <option>A a F (Letras)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mínimo para Aprobar</label>
+                        <input type="number" class="form-input" value="3.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mínimo de Asistencia (%)</label>
+                        <input type="number" class="form-input" value="80">
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-outline">❌ Cancelar</button>
+                    <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar Cambios</button>
+                </div>
+            </section>
+
+            <section class="card mb-3 hidden" id="pestana-seguridad">
+                <div class="card-header">
+                    <h2 class="card-title">🔒 Seguridad y Accesos</h2>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Autenticación de Dos Factores (2FA)</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="2fa">
+                            <label for="2fa" class="form-check-label">Requerir para administradores</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bloqueo por Intentos Fallidos</label>
+                        <select class="form-select">
+                            <option>Bloquear después de 5 intentos</option>
+                            <option>Bloquear después de 3 intentos</option>
+                            <option>Bloquear después de 10 intentos</option>
+                            <option>No bloquear</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tiempo de Sesión (minutos)</label>
+                        <input type="number" class="form-input" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Política de Contraseñas</label>
+                        <select class="form-select">
+                            <option>Estándar (8 caracteres)</option>
+                            <option>Alta Seguridad (12 caracteres, símbolos)</option>
+                            <option>Baja (6 caracteres)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-danger">🗑️ Borrar Logs</button>
+                    <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar Cambios</button>
+                </div>
+            </section>
+
+            <section class="card mb-3 hidden" id="pestana-notificaciones">
+                <div class="card-header">
+                    <h2 class="card-title">🔔 Configuración de Notificaciones</h2>
+                </div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Notificaciones por Email</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="emailNotif" checked>
+                            <label for="emailNotif" class="form-check-label">Enviar correos automáticos</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notificaciones Push</label>
+                        <div class="form-check">
+                            <input type="checkbox" id="pushNotif" checked>
+                            <label for="pushNotif" class="form-check-label">Alertas en navegador</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Servidor SMTP</label>
+                        <input type="text" class="form-input" value="smtp.nuevoamanecer.edu">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Puerto SMTP</label>
+                        <input type="number" class="form-input" value="587">
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-outline">📧 Enviar Prueba</button>
+                    <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar Cambios</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function mostrarPestana(nombre) {
+            document.querySelectorAll('[id^="pestana-"]').forEach(p => p.classList.add('hidden'));
+            document.getElementById('pestana-' + nombre).classList.remove('hidden');
+        }
+        function guardarConfiguracion() {
+            alert('✅ Configuración guardada exitosamente');
+        }
+    </script>
+</body>
+</html>

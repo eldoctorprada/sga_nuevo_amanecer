@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Iniciar Sesión</title>
+    
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="card login-card">
+        <div class="text-center mb-2 header-section">
+            <div class="icon-badge">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="school-title">Nuevo Amanecer</h1>
+            <p class="school-subtitle">Sistema Integral de Gestión Académica</p>
+            <div class="accent-line"></div>
+        </div>
+        
+        <!-- Mostrar errores aquí -->
+        <div id="errorMessage" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText"></span>
+        </div>
+        
+        <!-- Mostrar loading -->
+        <div id="loadingSpinner" style="display: none; text-align: center; margin-bottom: 1rem;">
+            <i class="fas fa-spinner fa-spin"></i> Iniciando sesión...
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">📧 Correo electrónico</label>
+                <input type="email" class="form-input" placeholder="usuario@nuevoamanecer.edu" id="email" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🔒 Contraseña</label>
+                <input type="password" class="form-input" placeholder="••••••••" id="password" required>
+            </div>
+            <div class="flex-between mb-2" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="rememberMe" style="width: 18px; height: 18px; cursor: pointer;">  
+                    <span>Recordarme</span>
+                </label>
+                <a href="#" id="forgotPassword" style="color: #6366f1; font-weight: 500;">¿Olvidó su contraseña?</a>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                🚀 Ingresar al Sistema
+            </button>
+        </form>
+        
+        <!-- Credenciales de prueba (solo para desarrollo) -->
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 12px; font-size: 0.8rem;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: 600;">📋 Credenciales de prueba:</p>
+            <p style="margin: 0;"><strong>👨‍💼 Admin:</strong> admin@nuevoamanecer.edu / admin123</p>
+            <p style="margin: 0;"><strong>👨‍🏫 Docente:</strong> docente@nuevoamanecer.edu / docente123</p>
+            <p style="margin: 0;"><strong>🎓 Estudiante:</strong> ana.torres@estudiante.edu / estudiante123</p>
+        </div>
+        
+        <div style="font-size: 0.85rem; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1rem; text-align: center;">
+            © 2026 Escuela "Nuevo Amanecer" <br>
+            <a href="#" style="color: #6366f1; font-weight: 500;">Soporte Técnico</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script>
+        // Variables
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const rememberCheckbox = document.getElementById('rememberMe');
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        // Cargar email guardado si existe
+        if (localStorage.getItem('saved_email')) {
+            emailInput.value = localStorage.getItem('saved_email');
+            rememberCheckbox.checked = true;
+        }
+        
+        // Mostrar error
+        function showError(message) {
+            errorText.textContent = message;
+            errorDiv.style.display = 'flex';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Ocultar error
+        function hideError() {
+            errorDiv.style.display = 'none';
+        }
+        
+        // Mostrar/ocultar loading
+        function setLoading(loading) {
+            loadingSpinner.style.display = loading ? 'block' : 'none';
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = loading;
+        }
+        
+        // Enviar formulario de login
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+            
+            const email = emailInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+            
+            if (!email || !password) {
+                showError('Por favor ingrese email y contraseña');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const result = await window.api.login(email, password);
+                
+                if (result.success) {
+                    // Guardar email si "Recordarme" está marcado
+                    if (rememberCheckbox.checked) {
+                        localStorage.setItem('saved_email', email);
+                    } else {
+                        localStorage.removeItem('saved_email');
+                    }
+                    
+                    // Redirigir al dashboard correspondiente
+                    window.location.href = result.dashboard_url;
+                } else {
+                    showError(result.message || 'Credenciales inválidas');
+                }
+            } catch (error) {
+                showError('Error de conexión con el servidor. ¿El backend está corriendo?');
+                console.error('Login error:', error);
+            } finally {
+                setLoading(false);
+            }
+        });
+        
+        // Recuperar contraseña (demo)
+        document.getElementById('forgotPassword').addEventListener('click', function(e) {
+            e.preventDefault();
+            showError('⚠️ Función de recuperación de contraseña. Contacte al administrador.');
+        });
+    </script>
+</body>
+</html>
