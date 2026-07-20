@@ -29,14 +29,8 @@ def create_app(config_name='default'):
     """
     app = Flask(__name__, static_folder='../frontend', static_url_path='')
     
-    # Cargar configuración
+    # Cargar configuración (config.py ya lee las credenciales desde .env)
     app.config.from_object(config[config_name])
-    
-    # Configurar contraseña de BD si está en variables de entorno
-    if os.environ.get('DB_PASSWORD'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace(
-            'password_placeholder', os.environ['DB_PASSWORD']
-        )
     
     # Inicializar extensiones
     CORS(app)  # Permite peticiones desde el frontend

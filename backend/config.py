@@ -5,20 +5,27 @@ Variables de configuraciÃ³n para Flask, Base de Datos y JWT
 
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Carga las variables definidas en el archivo .env (que NO se sube a Git)
+load_dotenv()
 
 class Config:
-    """ConfiguraciÃ³n principal del sistema"""
+    """Configuración principal del sistema"""
     
-    # ==================== CONFIGURACIÃ“N BASE DE DATOS ====================
+    # ==================== CONFIGURACIÓN BASE DE DATOS ====================
     # Usando MySQL (XAMPP)
-    # Cambia la contraseÃ±a si la tienes diferente (por defecto XAMPP es vacÃ­o)
-    DB_HOST = '127.0.0.1'
-    DB_USER = 'root'
-    DB_PASSWORD = 'FredySena2026*'  # Contraseña local de MariaDB/MySQL
-    DB_NAME = 'sga_nuevo_amanecer'
-    DB_PORT = 3307
+    # Todos estos valores se leen de variables de entorno (.env local).
+    # Si alguna variable no está definida, se usa un valor por defecto
+    # SOLO para que el proyecto no truene al importar; en desarrollo real
+    # siempre debes tener tu propio archivo .env con tus credenciales.
+    DB_HOST = os.environ.get('DB_HOST', '127.0.0.1')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+    DB_NAME = os.environ.get('DB_NAME', 'sga_nuevo_amanecer')
+    DB_PORT = os.environ.get('DB_PORT', '3307')
     
-    # URL de conexiÃ³n SQLAlchemy
+    # URL de conexión SQLAlchemy
     SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -27,10 +34,11 @@ class Config:
         'pool_pre_ping': True
     }
     
-    # ==================== CONFIGURACIÃ“N JWT ====================
-    SECRET_KEY = 'sga-nuevo-amanecer-secret-key-2026-sena'
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)  # Token vÃ¡lido por 8 horas
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)   # Refresh token por 7 dÃ­as
+    # ==================== CONFIGURACIÓN JWT ====================
+    # También se lee de .env. Nunca dejes una clave real escrita aquí.
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'clave-temporal-solo-para-desarrollo-cambiala')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)  # Token válido por 8 horas
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)   # Refresh token por 7 días
     
     # ==================== CONFIGURACIÃ“N GENERAL ====================
     DEBUG = True
