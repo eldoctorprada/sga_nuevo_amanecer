@@ -160,6 +160,43 @@
         </div>
     </div>
 
+    <!-- MODAL EDITAR USUARIO -->
+    <div class="modal-overlay" id="modalEditar">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Editar Usuario</h3>
+                <button class="modal-close" onclick="cerrarModalEditar()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editarId">
+                <div class="form-group">
+                    <label class="form-label form-label-required">Nombre</label>
+                    <input type="text" class="form-input" id="editarNombre" placeholder="Nombre">
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Apellido</label>
+                    <input type="text" class="form-input" id="editarApellido" placeholder="Apellido">
+                </div>
+                <div class="form-group">
+                    <label class="form-label form-label-required">Email</label>
+                    <input type="email" class="form-input" id="editarEmail" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" class="form-input" id="editarTelefono" placeholder="Ej: 3001234567">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nueva contraseña (opcional)</label>
+                    <input type="password" class="form-input" id="editarPassword" placeholder="Dejar en blanco para no cambiarla">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="cerrarModalEditar()">❌ Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarEdicionUsuario()">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script>
         let usuariosData = [];
@@ -266,7 +303,52 @@
         }
         
         function editarUsuario(id) {
-            alert('✏️ Función de edición en desarrollo');
+            // Busco al usuario en los datos ya cargados en la tabla, para no pedirlo otra vez al backend
+            const usuario = usuariosData.find(u => u.id_usuario === id);
+            if (!usuario) {
+                alert('❌ No se encontró el usuario');
+                return;
+            }
+            document.getElementById('editarId').value = usuario.id_usuario;
+            document.getElementById('editarNombre').value = usuario.nombre;
+            document.getElementById('editarApellido').value = usuario.apellido;
+            document.getElementById('editarEmail').value = usuario.email;
+            document.getElementById('editarTelefono').value = usuario.telefono || '';
+            document.getElementById('editarPassword').value = '';
+            document.getElementById('modalEditar').classList.add('active');
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modalEditar').classList.remove('active');
+        }
+
+        async function guardarEdicionUsuario() {
+            const id = document.getElementById('editarId').value;
+            const nombre = document.getElementById('editarNombre').value;
+            const apellido = document.getElementById('editarApellido').value;
+            const email = document.getElementById('editarEmail').value;
+            const telefono = document.getElementById('editarTelefono').value;
+            const password = document.getElementById('editarPassword').value;
+
+            if (!nombre || !apellido || !email) {
+                alert('❌ Nombre, apellido y email son obligatorios');
+                return;
+            }
+
+            // Solo mando la contraseña si el aprendiz escribió una nueva
+            const userData = { nombre, apellido, email, telefono };
+            if (password) {
+                userData.password = password;
+            }
+
+            const result = await window.api.actualizarUsuario(id, userData);
+            if (result.success) {
+                alert('✅ Usuario actualizado exitosamente');
+                cerrarModalEditar();
+                cargarUsuarios();
+            } else {
+                alert('❌ Error: ' + (result.data?.message || 'No se pudo actualizar el usuario'));
+            }
         }
         
         async function eliminarUsuario(id, nombre) {

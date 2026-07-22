@@ -303,6 +303,20 @@ def actualizar_usuario(usuario_actual, id_usuario):
             usuario.apellido = data['apellido'].strip()
         if 'telefono' in data:
             usuario.telefono = data['telefono']
+        if 'email' in data and data['email']:
+            # Verifico que el nuevo correo no esté siendo usado por otro usuario
+            email_nuevo = data['email'].lower().strip()
+            if email_nuevo != usuario.email:
+                existe = Usuario.query.filter(
+                    Usuario.email == email_nuevo,
+                    Usuario.id_usuario != usuario.id_usuario
+                ).first()
+                if existe:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Ese correo ya está en uso por otro usuario'
+                    }), 400
+                usuario.email = email_nuevo
         if 'activo' in data:
             usuario.activo = data['activo']
         
