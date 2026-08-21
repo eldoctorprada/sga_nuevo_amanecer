@@ -463,6 +463,14 @@ async function getReporteRendimientoGrado(gradoId, periodo, anio) {
     return result.success ? result.data : null;
 }
 
+/**
+ * Genera reporte de asistencia por grado (rango de fechas)
+ */
+async function getReporteAsistenciaGrado(gradoId, fechaInicio, fechaFin) {
+    const result = await apiRequest(`/reportes/asistencia/grado/${gradoId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+    return result.success ? result.data : null;
+}
+
 // ==================== ESTADÍSTICAS ====================
 
 /**
@@ -604,6 +612,30 @@ async function getMensajesNoLeidosCount() {
 }
 
 // Exportar funciones para usar en los HTML
+/**
+ * Lista los grados activos del sistema
+ */
+async function getGrados() {
+    const result = await apiRequest('/grados');
+    return result.success ? result.data.grados : [];
+}
+
+/**
+ * Lista las materias activas del sistema
+ */
+async function getMaterias() {
+    const result = await apiRequest('/materias');
+    return result.success ? result.data.materias : [];
+}
+
+/**
+ * Lista el directorio de contactos (para elegir destinatarios de mensajes)
+ */
+async function getDirectorio() {
+    const result = await apiRequest('/directorio');
+    return result.success ? result.data.contactos : [];
+}
+
  window.api = {
     // Auth
     login,
@@ -654,7 +686,13 @@ async function getMensajesNoLeidosCount() {
     // Reportes
     getReporteCalificaciones,
     getReporteAsistencias,
-    getReporteRendimientoGrado
+    getReporteRendimientoGrado,
+    getReporteAsistenciaGrado,
+
+    // Catálogo
+    getGrados,
+    getMaterias,
+    getDirectorio
 };
 // ==================== ELIMINAR ASISTENCIA ====================
 async function eliminarAsistencia(asistenciaId) {

@@ -25,82 +25,59 @@
             <header class="top-bar">
                 <div>
                     <h1 class="top-bar-title">🕐 Horarios Académicos</h1>
-                    <p class="top-bar-subtitle">Consulta la distribución semanal de clases por grado y docente</p>
+                    <p class="top-bar-subtitle">Consulta la distribución semanal de clases por grado</p>
                 </div>
-                <button class="btn btn-primary" onclick="exportarPDF()">
-                    <i class="fas fa-file-pdf"></i> Descargar PDF
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Imprimir / Guardar PDF
                 </button>
             </header>
 
-            <!-- FILTROS MEJORADOS -->
             <section class="card mb-3">
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                     <div class="form-group">
                         <label class="form-label">🎓 Grado</label>
-                        <select class="form-select" id="filtroGrado">
-                            <option value="5a">5° A - Matemáticas</option>
-                            <option value="5b">5° B - Ciencias</option>
-                            <option value="4a">4° A - Lengua</option>
-                            <option value="4b">4° B - Sociales</option>
-                        </select>
+                        <select class="form-select" id="filtroGrado"><option value="">Cargando...</option></select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">📅 Semana</label>
-                        <select class="form-select" id="filtroSemana">
-                            <option value="1">Semana 1 (Abril 07-11)</option>
-                            <option value="2">Semana 2 (Abril 14-18)</option>
-                            <option value="3">Semana 3 (Abril 21-25)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">👨‍🏫 Filtrar por Docente</label>
-                        <select class="form-select" id="filtroDocente">
-                            <option value="">Todos los docentes</option>
-                            <option value="Carlos Martínez">Carlos Martínez (Matemáticas)</option>
-                            <option value="Ana García">Ana García (Lengua)</option>
-                            <option value="Juan Pérez">Juan Pérez (Educación Física)</option>
-                            <option value="María López">María López (Sociales)</option>
+                        <label class="form-label">📅 Período</label>
+                        <select class="form-select" id="filtroPeriodo">
+                            <option value="1">Primer Trimestre</option>
+                            <option value="2">Segundo Trimestre</option>
+                            <option value="3">Tercer Trimestre</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <button class="btn btn-primary" onclick="aplicarFiltros()" style="width: 100%;">
-                            <i class="fas fa-filter"></i> Aplicar Filtros
+                            <i class="fas fa-filter"></i> Consultar Horario
                         </button>
                     </div>
                 </div>
             </section>
 
-            <!-- TABLA DE HORARIOS (DINÁMICA) -->
             <section class="card">
                 <div id="loadingHorario" class="text-center p-4" style="display: none; text-align: center;">
-                    <i class="fas fa-spinner fa-spin"></i> Cargando horario...
+                    <i class="fas fa-spinner fa-spin"></i> Consultando la API...
                 </div>
                 <div class="table-container" id="contenedorTabla">
                     <table id="tablaHorarios" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Hora</th>
-                                <th>Lunes</th>
-                                <th>Martes</th>
-                                <th>Miércoles</th>
-                                <th>Jueves</th>
-                                <th>Viernes</th>
+                                <th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th>
                             </tr>
                         </thead>
                         <tbody id="tablaHorariosBody">
-                            <tr><td colspan="6" class="text-center">Seleccione un grado y haga clic en "Aplicar Filtros"</td></tr>
+                            <tr><td colspan="5" class="text-center">Selecciona un grado y haz clic en "Consultar Horario"</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- INFORMACIÓN ADICIONAL -->
             <section class="card mt-3">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle alert-icon"></i>
                     <div class="alert-content">
-                        <div class="alert-title">ℹ️ Información Importante</div>
-                        <p>Los horarios están sujetos a cambios por eventos institucionales. Cualquier modificación será notificada con 24 horas de anticipación.</p>
+                        <div class="alert-title">ℹ️ Información</div>
+                        <p>Los horarios mostrados provienen directamente de la base de datos del sistema, consultados en tiempo real mediante la API.</p>
                     </div>
                 </div>
             </section>
@@ -109,196 +86,76 @@
 
     <script src="js/api.js"></script>
     <script>
-        // ==================== BASE DE DATOS DE HORARIOS ====================
-        const horariosDB = {
-            '5a': {  // 5° A
-                nombre: '5° A - Matemáticas',
-                horarios: [
-                    { dia: 'Lunes', horaInicio: '08:00', horaFin: '10:00', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 201' },
-                    { dia: 'Lunes', horaInicio: '10:30', horaFin: '12:30', materia: 'Ciencias Naturales', docente: 'Carlos Martínez', aula: 'Laboratorio' },
-                    { dia: 'Martes', horaInicio: '08:00', horaFin: '10:00', materia: 'Lengua Castellana', docente: 'Ana García', aula: 'Aula 201' },
-                    { dia: 'Martes', horaInicio: '10:30', horaFin: '12:30', materia: 'Sociales', docente: 'María López', aula: 'Aula 201' },
-                    { dia: 'Miércoles', horaInicio: '08:00', horaFin: '10:00', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 201' },
-                    { dia: 'Miércoles', horaInicio: '10:30', horaFin: '12:30', materia: 'Inglés', docente: 'Sarah Johnson', aula: 'Aula 201' },
-                    { dia: 'Jueves', horaInicio: '08:00', horaFin: '10:00', materia: 'Educación Física', docente: 'Juan Pérez', aula: 'Cancha' },
-                    { dia: 'Jueves', horaInicio: '10:30', horaFin: '12:30', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 201' },
-                    { dia: 'Viernes', horaInicio: '08:00', horaFin: '10:00', materia: 'Arte y Cultura', docente: 'Laura Sánchez', aula: 'Sala de Arte' },
-                    { dia: 'Viernes', horaInicio: '10:30', horaFin: '12:30', materia: 'Tecnología', docente: 'Roberto Díaz', aula: 'Sala de Cómputo' }
-                ]
-            },
-            '5b': {  // 5° B
-                nombre: '5° B - Ciencias',
-                horarios: [
-                    { dia: 'Lunes', horaInicio: '08:00', horaFin: '10:00', materia: 'Lengua Castellana', docente: 'Ana García', aula: 'Aula 202' },
-                    { dia: 'Lunes', horaInicio: '10:30', horaFin: '12:30', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 202' },
-                    { dia: 'Martes', horaInicio: '08:00', horaFin: '10:00', materia: 'Ciencias Naturales', docente: 'Carlos Martínez', aula: 'Laboratorio' },
-                    { dia: 'Martes', horaInicio: '10:30', horaFin: '12:30', materia: 'Educación Física', docente: 'Juan Pérez', aula: 'Cancha' },
-                    { dia: 'Miércoles', horaInicio: '08:00', horaFin: '10:00', materia: 'Sociales', docente: 'María López', aula: 'Aula 202' },
-                    { dia: 'Miércoles', horaInicio: '10:30', horaFin: '12:30', materia: 'Inglés', docente: 'Sarah Johnson', aula: 'Aula 202' },
-                    { dia: 'Jueves', horaInicio: '08:00', horaFin: '10:00', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 202' },
-                    { dia: 'Jueves', horaInicio: '10:30', horaFin: '12:30', materia: 'Arte', docente: 'Laura Sánchez', aula: 'Sala de Arte' },
-                    { dia: 'Viernes', horaInicio: '08:00', horaFin: '10:00', materia: 'Tecnología', docente: 'Roberto Díaz', aula: 'Sala de Cómputo' },
-                    { dia: 'Viernes', horaInicio: '10:30', horaFin: '12:30', materia: 'Ética', docente: 'Carmen Ruiz', aula: 'Aula 202' }
-                ]
-            },
-            '4a': {  // 4° A
-                nombre: '4° A - Lengua',
-                horarios: [
-                    { dia: 'Lunes', horaInicio: '08:00', horaFin: '10:00', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 101' },
-                    { dia: 'Martes', horaInicio: '08:00', horaFin: '10:00', materia: 'Lengua', docente: 'Ana García', aula: 'Aula 101' },
-                    { dia: 'Miércoles', horaInicio: '08:00', horaFin: '10:00', materia: 'Ciencias', docente: 'Carlos Martínez', aula: 'Laboratorio' },
-                    { dia: 'Jueves', horaInicio: '08:00', horaFin: '10:00', materia: 'Sociales', docente: 'María López', aula: 'Aula 101' },
-                    { dia: 'Viernes', horaInicio: '08:00', horaFin: '10:00', materia: 'Educación Física', docente: 'Juan Pérez', aula: 'Cancha' }
-                ]
-            },
-            '4b': {  // 4° B
-                nombre: '4° B - Sociales',
-                horarios: [
-                    { dia: 'Lunes', horaInicio: '08:00', horaFin: '10:00', materia: 'Sociales', docente: 'María López', aula: 'Aula 102' },
-                    { dia: 'Martes', horaInicio: '08:00', horaFin: '10:00', materia: 'Matemáticas', docente: 'Carlos Martínez', aula: 'Aula 102' },
-                    { dia: 'Miércoles', horaInicio: '08:00', horaFin: '10:00', materia: 'Lengua', docente: 'Ana García', aula: 'Aula 102' },
-                    { dia: 'Jueves', horaInicio: '08:00', horaFin: '10:00', materia: 'Ciencias', docente: 'Carlos Martínez', aula: 'Laboratorio' },
-                    { dia: 'Viernes', horaInicio: '08:00', horaFin: '10:00', materia: 'Arte', docente: 'Laura Sánchez', aula: 'Sala de Arte' }
-                ]
-            }
-        };
+        const ANIO_ACADEMICO = 2026;
+        const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+        const DIAS_LABEL = { lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves', viernes: 'Viernes' };
 
-        // Rangos horarios (incluye recreo y almuerzo)
-        const rangosHorarios = [
-            { inicio: '08:00', fin: '10:00', label: '08:00 - 10:00' },
-            { inicio: '10:00', fin: '10:30', label: '10:00 - 10:30', esRecreo: true },
-            { inicio: '10:30', fin: '12:30', label: '10:30 - 12:30' },
-            { inicio: '12:30', fin: '13:30', label: '12:30 - 13:30', esAlmuerzo: true },
-            { inicio: '13:30', fin: '15:30', label: '13:30 - 15:30' }
-        ];
-
-        const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-
-        // ==================== FUNCIÓN PRINCIPAL PARA APLICAR FILTROS ====================
-        function aplicarFiltros() {
-            const gradoSeleccionado = document.getElementById('filtroGrado').value;
-            const docenteFiltro = document.getElementById('filtroDocente').value;
-            const semana = document.getElementById('filtroSemana').value;
-            
-            // Mostrar loading
-            document.getElementById('loadingHorario').style.display = 'block';
-            document.getElementById('contenedorTabla').style.opacity = '0.5';
-            
-            // Simular carga (para dar feedback visual)
-            setTimeout(() => {
-                const gradoData = horariosDB[gradoSeleccionado];
-                
-                if (!gradoData) {
-                    document.getElementById('tablaHorariosBody').innerHTML = 
-                        '<tr><td colspan="6" class="text-center">No hay horario disponible para este grado</td></tr>';
-                    return;
-                }
-                
-                let horarios = [...gradoData.horarios];
-                
-                // Filtrar por docente (si se seleccionó uno)
-                if (docenteFiltro) {
-                    horarios = horarios.filter(h => h.docente === docenteFiltro);
-                }
-                
-                // Mostrar información de la semana seleccionada
-                console.log(`📅 Semana ${semana} - ${gradoData.nombre} - Docente filtro: ${docenteFiltro || 'Todos'}`);
-                
-                renderizarHorario(horarios, gradoData.nombre);
-                
-                document.getElementById('loadingHorario').style.display = 'none';
-                document.getElementById('contenedorTabla').style.opacity = '1';
-            }, 300);
+        async function inicializarGrados() {
+            const grados = await window.api.getGrados();
+            const sel = document.getElementById('filtroGrado');
+            sel.innerHTML = grados.map(g => `<option value="${g.id_grado}">${g.nombre}</option>`).join('') || '<option value="">Sin grados</option>';
+            if (grados.length) aplicarFiltros();
         }
 
-        // ==================== FUNCIÓN PARA RENDERIZAR LA TABLA ====================
-        function renderizarHorario(horarios, gradoNombre) {
+        async function aplicarFiltros() {
+            const idGrado = document.getElementById('filtroGrado').value;
+            const periodo = document.getElementById('filtroPeriodo').value;
+            if (!idGrado) return;
+
+            document.getElementById('loadingHorario').style.display = 'block';
+            document.getElementById('contenedorTabla').style.opacity = '0.5';
+
+            const data = await window.api.getHorarioGrado(idGrado, periodo, ANIO_ACADEMICO);
+
+            document.getElementById('loadingHorario').style.display = 'none';
+            document.getElementById('contenedorTabla').style.opacity = '1';
+
+            if (!data || !data.success) {
+                document.getElementById('tablaHorariosBody').innerHTML =
+                    '<tr><td colspan="5" class="text-center">No se pudo cargar el horario para este grado.</td></tr>';
+                return;
+            }
+
+            renderizarHorario(data.horario);
+        }
+
+        function renderizarHorario(horarioPorDia) {
             const tbody = document.getElementById('tablaHorariosBody');
-            
-            // Organizar horarios por día y hora
-            const horarioPorDia = {};
-            dias.forEach(dia => { horarioPorDia[dia] = {}; });
-            
-            horarios.forEach(h => {
-                const claveHora = `${h.horaInicio}-${h.horaFin}`;
-                if (!horarioPorDia[h.dia]) {
-                    horarioPorDia[h.dia] = {};
-                }
-                horarioPorDia[h.dia][claveHora] = h;
-            });
-            
-            // Generar filas de la tabla
+            const maxFilas = Math.max(1, ...DIAS.map(d => (horarioPorDia[d] || []).length));
+
             let html = '';
-            
-            for (const rango of rangosHorarios) {
-                // Fila de recreo o almuerzo
-                if (rango.esRecreo) {
-                    html += `
-                        <tr style="background-color: #fef3c7;">
-                            <td><strong>${rango.label}</strong></td>
-                            <td colspan="5" class="text-center" style="font-weight: 600;">☕ RECREO</td>
-                        </tr>
-                    `;
-                    continue;
-                }
-                
-                if (rango.esAlmuerzo) {
-                    html += `
-                        <tr style="background-color: #dcfce7;">
-                            <td><strong>${rango.label}</strong></td>
-                            <td colspan="5" class="text-center" style="font-weight: 600;">🍽️ ALMUERZO</td>
-                        </tr>
-                    `;
-                    continue;
-                }
-                
-                // Fila normal de clases
-                const claveHora = `${rango.inicio}-${rango.fin}`;
-                html += `<tr>
-                    <td><strong>${rango.label}</strong></td>`;
-                
-                for (const dia of dias) {
-                    const clase = horarioPorDia[dia]?.[claveHora];
-                    
+            for (let i = 0; i < maxFilas; i++) {
+                html += '<tr>';
+                for (const dia of DIAS) {
+                    const clases = horarioPorDia[dia] || [];
+                    const clase = clases[i];
                     if (clase) {
-                        html += `
-                            <td>
-                                <strong>${clase.materia}</strong><br>
-                                <small style="color: var(--text-light);">${clase.docente}</small><br>
-                                <small style="color: var(--primary);">📍 ${clase.aula}</small>
-                            </td>
-                        `;
+                        html += `<td>
+                            <strong>${clase.hora_inicio} - ${clase.hora_fin}</strong><br>
+                            ${clase.materia ? clase.materia.nombre : ''}<br>
+                            <small style="color: var(--text-light);">${clase.docente && clase.docente.usuario ? clase.docente.usuario.nombre_completo : ''}</small><br>
+                            <small style="color: var(--primary);">📍 ${clase.aula || 'Sin aula'}</small>
+                        </td>`;
                     } else {
                         html += `<td class="text-center" style="color: var(--text-muted);">-</td>`;
                     }
                 }
-                html += `</tr>`;
+                html += '</tr>';
             }
-            
+
+            if (maxFilas === 1 && DIAS.every(d => !(horarioPorDia[d] || []).length)) {
+                html = '<tr><td colspan="5" class="text-center">No hay clases registradas para este grado y período.</td></tr>';
+            }
+
             tbody.innerHTML = html;
         }
 
-        // ==================== EXPORTAR PDF (simulado) ====================
-        function exportarPDF() {
-            alert('📄 Funcionalidad de PDF en desarrollo. Por ahora puede usar "Imprimir" (Ctrl+P) y guardar como PDF.');
-        }
-
-        // ==================== CERRAR SESIÓN ====================
         document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
-            if (window.api && window.api.logout) {
-                window.api.logout();
-            } else {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            }
+            window.api.logout();
         });
-        
-        // ==================== CARGAR HORARIO INICIAL ====================
-        // Cargar automáticamente el horario del grado seleccionado al iniciar
-        window.addEventListener('DOMContentLoaded', () => {
-            aplicarFiltros();
-        });
+
+        inicializarGrados();
     </script>
 </body>
 </html>

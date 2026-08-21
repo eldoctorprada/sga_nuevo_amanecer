@@ -27,19 +27,28 @@
             <section class="card mb-3">
                 <div class="card-header"><h2 class="card-title">🔍 Generar Nuevo Reporte</h2></div>
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div><label>Tipo de Reporte</label><select class="form-select"><option>Rendimiento Académico</option><option>Control de Asistencia</option></select></div>
-                    <div><label>Grado</label><select class="form-select"><option>Todos</option><option>Quinto</option></select></div>
-                    <div><label>Período</label><select class="form-select"><option>2026-01</option></select></div>
+                    <div><label>Tipo de Reporte</label>
+                        <select class="form-select" id="tipoReporte">
+                            <option value="rendimiento">Rendimiento Académico</option>
+                            <option value="asistencia">Control de Asistencia</option>
+                        </select>
+                    </div>
+                    <div><label>Grado</label><select class="form-select" id="filtroGrado"><option value="">Cargando...</option></select></div>
+                    <div id="contenedorPeriodo"><label>Período</label>
+                        <select class="form-select" id="filtroPeriodo">
+                            <option value="1">Primer Trimestre</option>
+                            <option value="2">Segundo Trimestre</option>
+                            <option value="3">Tercer Trimestre</option>
+                        </select>
+                    </div>
                     <div><button class="btn btn-primary" onclick="generarReporte()"><i class="fas fa-search"></i> Generar Reporte</button></div>
                 </div>
             </section>
 
             <section class="card">
-                <div class="card-header"><h2 class="card-title">📋 Tipos de Reportes</h2></div>
-                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-                    <div class="card"><h4>🎓 Boletín de Calificaciones</h4><button class="btn btn-sm btn-outline">PDF</button></div>
-                    <div class="card"><h4>✅ Control de Asistencia</h4><button class="btn btn-sm btn-outline">PDF</button></div>
-                    <div class="card"><h4>📊 Estadísticas</h4><button class="btn btn-sm btn-outline">Excel</button></div>
+                <div class="card-header"><h2 class="card-title">📋 Resultado</h2></div>
+                <div id="resultadoReporte">
+                    <p class="text-center" style="color: var(--text-light);">Selecciona un tipo de reporte y un grado, luego haz clic en "Generar Reporte".</p>
                 </div>
             </section>
         </main>
@@ -47,8 +56,94 @@
 
     <script src="js/api.js"></script>
     <script>
-        function generarReporte() { alert('🔄 Generando reporte...'); }
+        const ANIO_ACADEMICO = 2026;
+
+        async function inicializarGrados() {
+            const grados = await window.api.getGrados();
+            const sel = document.getElementById('filtroGrado');
+            sel.innerHTML = grados.map(g => `<option value="${g.id_grado}">${g.nombre}</option>`).join('') || '<option value="">Sin grados</option>';
+        }
+
+        async function generarReporte() {
+            const tipo = document.getElementById('tipoReporte').value;
+            const idGrado = document.getElementById('filtroGrado').value;
+            const periodo = document.getElementById('filtroPeriodo').value;
+            const contenedor = document.getElementById('resultadoReporte');
+
+            if (!idGrado) { alert('Selecciona un grado.'); return; }
+
+            contenedor.innerHTML = '<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Generando reporte desde la API...</p>';
+
+            if (tipo === 'rendimiento') {
+                const data = await window.api.getReporteRendimientoGrado(idGrado, periodo, ANIO_ACADEMICO);
+                renderReporteRendimiento(data, contenedor);
+            } else {
+                const hoy = new Date().toISOString().slice(0, 10);
+                const inicioAnio = `${ANIO_ACADEMICO}-01-01`;
+                const data = await window.api.getReporteAsistenciaGrado(idGrado, inicioAnio, hoy);
+                renderReporteAsistencia(data, contenedor);
+            }
+        }
+
+        function renderReporteRendimiento(data, contenedor) {
+            if (!data || !data.success) {
+                contenedor.innerHTML = '<p class="text-center">No se pudo generar el reporte.</p>';
+                return;
+            }
+
+            const filas = (data.estudiantes || []).map((r, idx) => {
+                const nombre = r.estudiante.usuario ? r.estudiante.usuario.nombre_completo : 'Sin nombre';
+                return `<tr>
+                    <td>${idx + 1}</td>
+                    <td>${nombre}</td>
+                    <td>${r.promedio}</td>
+                    <td><span class="badge ${r.estado === 'Aprobado' ? 'badge-success' : 'badge-danger'}">${r.estado}</span></td>
+                </tr>`;
+            }).join('');
+
+            contenedor.innerHTML = `
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="card"><h4>Total estudiantes</h4><p style="font-size:1.5rem;">${data.total_estudiantes}</p></div>
+                    <div class="card"><h4>Aprobados</h4><p style="font-size:1.5rem; color: var(--success);">${data.aprobados}</p></div>
+                    <div class="card"><h4>Reprobados</h4><p style="font-size:1.5rem; color: var(--danger);">${data.reprobados}</p></div>
+                    <div class="card"><h4>Promedio del grado</h4><p style="font-size:1.5rem;">${data.promedio_grado}</p></div>
+                </div>
+                <div class="table-container">
+                    <table><thead><tr><th>#</th><th>Estudiante</th><th>Promedio</th><th>Estado</th></tr></thead>
+                    <tbody>${filas || '<tr><td colspan="4" class="text-center">Sin estudiantes en este grado</td></tr>'}</tbody></table>
+                </div>`;
+        }
+
+        function renderReporteAsistencia(data, contenedor) {
+            if (!data || !data.success) {
+                contenedor.innerHTML = '<p class="text-center">No se pudo generar el reporte.</p>';
+                return;
+            }
+
+            const filas = (data.estudiantes || []).map((r, idx) => {
+                const nombre = r.estudiante.usuario ? r.estudiante.usuario.nombre_completo : 'Sin nombre';
+                return `<tr>
+                    <td>${idx + 1}</td>
+                    <td>${nombre}</td>
+                    <td>${r.presentes} / ${r.total_dias}</td>
+                    <td>${r.porcentaje}%</td>
+                    <td><span class="badge ${r.estado === 'Cumple mínimo' ? 'badge-success' : 'badge-danger'}">${r.estado}</span></td>
+                </tr>`;
+            }).join('');
+
+            contenedor.innerHTML = `
+                <div class="table-container">
+                    <table><thead><tr><th>#</th><th>Estudiante</th><th>Presentes/Total</th><th>%</th><th>Estado</th></tr></thead>
+                    <tbody>${filas || '<tr><td colspan="5" class="text-center">Sin registros de asistencia en este grado</td></tr>'}</tbody></table>
+                </div>`;
+        }
+
+        document.getElementById('tipoReporte').addEventListener('change', (e) => {
+            document.getElementById('contenedorPeriodo').style.display = e.target.value === 'rendimiento' ? 'block' : 'none';
+        });
+
         document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
+        inicializarGrados();
     </script>
 </body>
 </html>

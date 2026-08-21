@@ -28,17 +28,28 @@
 
             <section class="card mb-3">
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div><label>📚 Materia</label><select class="form-select" id="filtroMateria"><option value="1">Matemáticas</option><option value="2">Ciencias</option></select></div>
-                    <div><label>📅 Período</label><select class="form-select" id="filtroPeriodo"><option value="1">Primer Trimestre</option><option value="2">Segundo Trimestre</option></select></div>
-                    <div><label>📊 Tipo</label><select class="form-select" id="filtroTipo"><option value="parcial1">Parcial 1</option><option value="parcial2">Parcial 2</option><option value="final">Final</option></select></div>
+                    <div><label>🏫 Grado</label><select class="form-select" id="filtroGrado"><option value="">Cargando...</option></select></div>
+                    <div><label>📚 Materia</label><select class="form-select" id="filtroMateria"><option value="">Cargando...</option></select></div>
+                    <div><label>📅 Período</label><select class="form-select" id="filtroPeriodo">
+                        <option value="1">Primer Trimestre</option>
+                        <option value="2">Segundo Trimestre</option>
+                        <option value="3">Tercer Trimestre</option>
+                    </select></div>
+                    <div><label>📊 Tipo</label><select class="form-select" id="filtroTipo">
+                        <option value="parcial1">Parcial 1</option>
+                        <option value="parcial2">Parcial 2</option>
+                        <option value="final">Final</option>
+                        <option value="trabajo">Trabajo</option>
+                        <option value="quizz">Quiz</option>
+                    </select></div>
                     <div><button class="btn btn-outline" onclick="cargarCalificaciones()"><i class="fas fa-search"></i> Filtrar</button></div>
                 </div>
             </section>
 
             <section class="card">
                 <div class="table-container">
-                    <table><thead><tr><th>#</th><th>Estudiante</th><th>Nota</th><th>Estado</th></tr></thead>
-                    <tbody id="tablaCalificaciones"><tr><td colspan="4" class="text-center">Cargando...</td></tr></tbody>
+                    <table><thead><tr><th>#</th><th>Estudiante</th><th>Nota</th><th>Promedio actual</th><th>Estado</th></tr></thead>
+                    <tbody id="tablaCalificaciones"><tr><td colspan="5" class="text-center">Selecciona un grado y una materia, luego haz clic en Filtrar</td></tr></tbody>
                     </table>
                 </div>
             </section>
@@ -47,34 +58,98 @@
 
     <script src="js/api.js"></script>
     <script>
-        let calificacionesData = [];
-        
+        const ANIO_ACADEMICO = 2026;
+        let estudiantesActuales = [];
+
+        async function inicializarSelects() {
+            const [grados, materias] = await Promise.all([window.api.getGrados(), window.api.getMaterias()]);
+
+            const selGrado = document.getElementById('filtroGrado');
+            selGrado.innerHTML = grados.map(g => `<option value="${g.id_grado}">${g.nombre}</option>`).join('') || '<option value="">Sin grados</option>';
+
+            const selMateria = document.getElementById('filtroMateria');
+            selMateria.innerHTML = materias.map(m => `<option value="${m.id_materia}">${m.nombre}</option>`).join('') || '<option value="">Sin materias</option>';
+
+            if (grados.length && materias.length) {
+                await cargarCalificaciones();
+            }
+        }
+
         async function cargarCalificaciones() {
-            const estudiantesMock = [
-                { id: 1, nombre: "Ana Torres", nota: 4.5 },
-                { id: 2, nombre: "Carlos Gómez", nota: 3.2 },
-                { id: 3, nombre: "María López", nota: 4.9 },
-                { id: 4, nombre: "Pedro Sánchez", nota: 2.8 },
-                { id: 5, nombre: "Luisa Castro", nota: 4.2 }
-            ];
-            
+            const idGrado = document.getElementById('filtroGrado').value;
+            const idMateria = document.getElementById('filtroMateria').value;
+            const periodo = document.getElementById('filtroPeriodo').value;
+
+            if (!idGrado || !idMateria) return;
+
             const tbody = document.getElementById('tablaCalificaciones');
-            tbody.innerHTML = estudiantesMock.map((e, idx) => `
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando desde la API...</td></tr>';
+
+            const data = await window.api.getCalificacionesGrado(idGrado, periodo, ANIO_ACADEMICO, idMateria);
+
+            if (!data || !data.success) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No se pudieron cargar las calificaciones.</td></tr>';
+                estudiantesActuales = [];
+                return;
+            }
+
+            const lista = data.estudiantes || [];
+
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay estudiantes activos en este grado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.map((item, idx) => {
+                const est = item.estudiante;
+                const nombreCompleto = est.usuario ? est.usuario.nombre_completo : 'Sin nombre';
+                return `
                 <tr>
                     <td>${idx + 1}</td>
-                    <td><strong>${e.nombre}</strong></td>
-                    <td><input type="number" class="form-input" id="nota_${e.id}" value="${e.nota}" min="0" max="5" step="0.1" style="width:100px"></td>
-                    <td><span class="badge ${e.nota >= 4 ? 'badge-success' : (e.nota >= 3 ? 'badge-warning' : 'badge-danger')}">${e.nota >= 4 ? 'Excelente' : (e.nota >= 3 ? 'Regular' : 'Bajo')}</span></td>
-                </tr>
-            `).join('');
+                    <td><strong>${nombreCompleto}</strong></td>
+                    <td><input type="number" class="form-input" id="nota_${est.id_estudiante}" value="" placeholder="0.0 - 5.0" min="0" max="5" step="0.1" style="width:110px"></td>
+                    <td>${item.promedio}</td>
+                    <td><span class="badge ${item.estado === 'Aprobado' ? 'badge-success' : 'badge-danger'}">${item.estado}</span></td>
+                </tr>`;
+            }).join('');
         }
-        
+
         async function guardarNotas() {
-            alert('✅ Notas guardadas exitosamente (Demo - Conexión real disponible)');
+            const idMateria = document.getElementById('filtroMateria').value;
+            const periodo = document.getElementById('filtroPeriodo').value;
+            const tipoEvaluacion = document.getElementById('filtroTipo').value;
+
+            if (!idMateria) { alert('Selecciona una materia primero.'); return; }
+
+            const inputs = document.querySelectorAll('[id^="nota_"]');
+            const calificaciones = [];
+            inputs.forEach(inp => {
+                if (inp.value !== '') {
+                    const idEstudiante = inp.id.replace('nota_', '');
+                    calificaciones.push({ id_estudiante: parseInt(idEstudiante), nota: parseFloat(inp.value) });
+                }
+            });
+
+            if (!calificaciones.length) { alert('No hay notas nuevas para guardar.'); return; }
+
+            const result = await window.api.registrarCalificacionesMasivas({
+                id_materia: parseInt(idMateria),
+                tipo_evaluacion: tipoEvaluacion,
+                periodo: periodo,
+                anio_academico: ANIO_ACADEMICO,
+                calificaciones: calificaciones
+            });
+
+            if (result.success) {
+                alert(`✅ ${result.data.message}`);
+                cargarCalificaciones();
+            } else {
+                alert(`❌ Error: ${result.data.message || 'No se pudieron guardar las notas'}`);
+            }
         }
-        
+
         document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
-        cargarCalificaciones();
+        inicializarSelects();
     </script>
 </body>
 </html>

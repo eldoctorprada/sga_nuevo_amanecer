@@ -25,7 +25,7 @@
             </header>
 
             <section class="card">
-                <div class="card-header"><h2 class="card-title">📥 Mensajes Recientes</h2></div>
+                <div class="card-header"><h2 class="card-title">📥 Mensajes Recibidos</h2></div>
                 <div id="mensajesLista" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <div class="skeleton" style="height: 80px;"></div>
                 </div>
@@ -38,7 +38,9 @@
         <div class="modal">
             <div class="modal-header"><h3>✉️ Nuevo Mensaje</h3><button class="modal-close" onclick="cerrarModalMensaje()">&times;</button></div>
             <div class="modal-body">
-                <div class="form-group"><label>Para:</label><select class="form-select" id="destinatario"><option value="2">Coordinación Académica</option><option value="3">Prof. Ana García</option></select></div>
+                <div class="form-group"><label>Para (ID de usuario destinatario):</label>
+                    <select class="form-select" id="destinatario"><option value="">Cargando destinatarios...</option></select>
+                </div>
                 <div class="form-group"><label>Asunto:</label><input type="text" class="form-input" id="asuntoMensaje"></div>
                 <div class="form-group"><label>Mensaje:</label><textarea class="form-textarea" id="contenidoMensaje" rows="5"></textarea></div>
             </div>
@@ -52,27 +54,78 @@
     <script src="js/api.js"></script>
     <script>
         async function cargarMensajes() {
-            const mensajesMock = [
-                { remitente: "Coordinación Académica", asunto: "Reunión de profesores", fecha: "Hoy, 10:30 AM", leido: false },
-                { remitente: "Padre de Familia", asunto: "Justificación de inasistencia", fecha: "Ayer, 4:15 PM", leido: true }
-            ];
-            
-            document.getElementById('mensajesLista').innerHTML = mensajesMock.map(m => `
-                <div style="padding:1rem; border:1px solid var(--border); border-radius:8px; background:${!m.leido ? '#f0f9ff' : 'white'}">
-                    <div class="flex-between"><strong>${m.remitente}</strong><small>${m.fecha}</small></div>
+            const lista = document.getElementById('mensajesLista');
+            lista.innerHTML = '<div class="skeleton" style="height: 80px;"></div>';
+
+            const data = await window.api.getMensajesRecibidos();
+
+            if (!data || !data.mensajes) {
+                lista.innerHTML = '<p class="text-center">No se pudieron cargar los mensajes.</p>';
+                return;
+            }
+
+            if (!data.mensajes.length) {
+                lista.innerHTML = '<p class="text-center">No tienes mensajes recibidos.</p>';
+                return;
+            }
+
+            lista.innerHTML = data.mensajes.map(m => {
+                const remitente = m.remitente && m.remitente.nombre_completo ? m.remitente.nombre_completo : 'Desconocido';
+                const fecha = m.fecha_envio ? new Date(m.fecha_envio).toLocaleString('es-CO') : '';
+                return `
+                <div style="padding:1rem; border:1px solid var(--border); border-radius:8px; background:${!m.leido ? '#f0f9ff' : 'white'}; cursor:pointer;" onclick="marcarLeido(${m.id_comunicacion})">
+                    <div class="flex-between"><strong>${remitente}</strong><small>${fecha}</small></div>
                     <h4 style="margin:0.5rem 0">${m.asunto}</h4>
-                </div>
-            `).join('');
+                    <p style="margin:0; color: var(--text-light);">${m.mensaje}</p>
+                    ${!m.leido ? '<span class="badge badge-primary" style="margin-top:0.5rem;">No leído</span>' : ''}
+                </div>`;
+            }).join('');
         }
-        
+
+        async function marcarLeido(id) {
+            await window.api.marcarMensajeLeido(id);
+            cargarMensajes();
+        }
+
+        async function cargarDestinatarios() {
+            const sel = document.getElementById('destinatario');
+            const contactos = await window.api.getDirectorio();
+            if (contactos && contactos.length) {
+                sel.innerHTML = contactos.map(c => `<option value="${c.id_usuario}">${c.nombre_completo} (${c.tipo_usuario})</option>`).join('');
+            } else {
+                sel.innerHTML = '<option value="">No hay contactos disponibles</option>';
+            }
+        }
+
         async function enviarMensaje() {
-            alert('✅ Mensaje enviado exitosamente');
-            cerrarModalMensaje();
+            const destinatarioId = document.getElementById('destinatario').value;
+            const asunto = document.getElementById('asuntoMensaje').value;
+            const mensaje = document.getElementById('contenidoMensaje').value;
+
+            if (!destinatarioId || !asunto || !mensaje) {
+                alert('Completa destinatario, asunto y mensaje.');
+                return;
+            }
+
+            const result = await window.api.enviarMensaje(parseInt(destinatarioId), asunto, mensaje);
+
+            if (result.success) {
+                alert('✅ Mensaje enviado exitosamente');
+                cerrarModalMensaje();
+                document.getElementById('asuntoMensaje').value = '';
+                document.getElementById('contenidoMensaje').value = '';
+                cargarMensajes();
+            } else {
+                alert(`❌ Error: ${result.data.message || 'No se pudo enviar el mensaje'}`);
+            }
         }
-        
-        function abrirModalMensaje() { document.getElementById('modalMensaje').classList.add('active'); }
+
+        function abrirModalMensaje() {
+            cargarDestinatarios();
+            document.getElementById('modalMensaje').classList.add('active');
+        }
         function cerrarModalMensaje() { document.getElementById('modalMensaje').classList.remove('active'); }
-        
+
         document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
         cargarMensajes();
     </script>

@@ -11,6 +11,7 @@ from .calificacion_routes import calificacion_bp
 from .horario_routes import horario_bp
 from .comunicacion_routes import comunicacion_bp
 from .reporte_routes import reporte_bp
+from .catalogo_routes import catalogo_bp
 
 # Lista de todos los blueprints para registrarlos fácilmente en app.py
 blueprints = [
@@ -20,5 +21,6 @@ blueprints = [
     calificacion_bp,
     horario_bp,
     comunicacion_bp,
-    reporte_bp
+    reporte_bp,
+    catalogo_bp
 ]
