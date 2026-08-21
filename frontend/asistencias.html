@@ -23,7 +23,7 @@
 
         <main class="main-content">
             <header class="top-bar">
-                <div><h1 class="top-bar-title">📋 Registro de Asistencias</h1><p class="top-bar-subtitle">Toma de asistencia diaria por grupo y fecha</p></div>
+                <div><h1 class="top-bar-title">📋 Registro de Asistencias</h1><p class="top-bar-subtitle">Toma de asistencia diaria por grado y fecha</p></div>
                 <div class="flex" style="gap: 1rem;">
                     <button class="btn btn-primary" onclick="guardarAsistencias()"><i class="fas fa-save"></i> Guardar Asistencias</button>
                 </div>
@@ -31,12 +31,11 @@
 
             <section class="card mb-3">
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div class="form-group"><label>📚 Materia / Grupo</label>
-                        <select class="form-select" id="filtroMateria" onchange="cargarEstudiantes()">
-                            <option value="1">Matemáticas - Grado 5° A</option>
-                            <option value="2">Ciencias Naturales - Grado 5° B</option>
-                            <option value="3">Lengua Castellana - Grado 4° A</option>
-                        </select>
+                    <div class="form-group"><label>🏫 Grado</label>
+                        <select class="form-select" id="filtroGrado" onchange="cargarEstudiantes()"><option value="">Cargando...</option></select>
+                    </div>
+                    <div class="form-group"><label>📚 Materia</label>
+                        <select class="form-select" id="filtroMateria" onchange="cargarEstudiantes()"><option value="">Cargando...</option></select>
                     </div>
                     <div class="form-group"><label>📅 Fecha</label>
                         <input type="date" class="form-input" id="filtroFecha" onchange="cargarEstudiantes()">
@@ -49,7 +48,7 @@
                 <div class="table-container">
                     <table>
                         <thead><tr><th>#</th><th>Estudiante</th><th>Documento</th><th>Estado</th><th>Justificación</th></tr></thead>
-                        <tbody id="tablaAsistencias"><tr><td colspan="5" class="text-center">Seleccione materia y fecha</td></tr></tbody>
+                        <tbody id="tablaAsistencias"><tr><td colspan="5" class="text-center">Selecciona grado, materia y fecha</td></tr></tbody>
                     </table>
                 </div>
             </section>
@@ -69,141 +68,141 @@
     <script>
         let estudiantesList = [];
         let asistenciasActuales = {};
-        
-        function cargarEstudiantes() {
-    const materiaId = document.getElementById('filtroMateria').value;
-    const fecha = document.getElementById('filtroFecha').value;
-    
-    console.log("Cargando asistencias - Materia:", materiaId, "Fecha:", fecha);
-    
-    // Mostrar loading temporal
-    const tbody = document.getElementById('tablaAsistencias');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</td></tr>';
-    
-    // Simular tiempo de carga (para que se vea que está funcionando)
-    setTimeout(() => {
-        // Diferentes estudiantes según la materia seleccionada
-        const estudiantesPorMateria = {
-            '1': [  // Matemáticas - Grado 5° A
-                { id: 1, nombre: "Ana Torres Rodríguez", documento: "1001234567", presente: true },
-                { id: 2, nombre: "Carlos Andrés Gómez", documento: "1001234568", presente: false },
-                { id: 3, nombre: "María Fernanda López", documento: "1001234569", presente: true },
-                { id: 4, nombre: "Pedro Sánchez Martínez", documento: "1001234570", presente: true }
-            ],
-            '2': [  // Ciencias Naturales - Grado 5° B
-                { id: 5, nombre: "Luisa Fernanda Castro", documento: "1001234571", presente: false },
-                { id: 6, nombre: "Sofía Ramírez", documento: "1001234572", presente: true },
-                { id: 7, nombre: "Andrés Díaz", documento: "1001234573", presente: false },
-                { id: 8, nombre: "Valentina Moreno", documento: "1001234574", presente: true }
-            ],
-            '3': [  // Lengua Castellana - Grado 4° A
-                { id: 9, nombre: "Samuel Rojas", documento: "1001234575", presente: true },
-                { id: 10, nombre: "Isabella Jiménez", documento: "1001234576", presente: false },
-                { id: 11, nombre: "Nicolás Ortiz", documento: "1001234577", presente: true },
-                { id: 12, nombre: "Camila Ruiz", documento: "1001234578", presente: true }
-            ]
-        };
-        
-        // Seleccionar estudiantes según materia, o usar los primeros por defecto
-        estudiantesList = estudiantesPorMateria[materiaId] || estudiantesPorMateria['1'];
-        
-        // Limpiar asistencias actuales al cambiar de materia/fecha
-        asistenciasActuales = {};
-        
-        // También podemos intentar cargar asistencias guardadas para esta fecha (localStorage)
-        const key = `asistencias_${materiaId}_${fecha}`;
-        const asistenciasGuardadas = localStorage.getItem(key);
-        if (asistenciasGuardadas) {
-            const data = JSON.parse(asistenciasGuardadas);
-            data.asistencias.forEach(a => {
-                asistenciasActuales[a.id_estudiante] = a.presente;
-            });
-            console.log("Cargadas asistencias guardadas localmente");
+
+        async function inicializarSelects() {
+            const [grados, materias] = await Promise.all([window.api.getGrados(), window.api.getMaterias()]);
+
+            document.getElementById('filtroGrado').innerHTML = grados.map(g => `<option value="${g.id_grado}">${g.nombre}</option>`).join('') || '<option value="">Sin grados</option>';
+            document.getElementById('filtroMateria').innerHTML = materias.map(m => `<option value="${m.id_materia}">${m.nombre}</option>`).join('') || '<option value="">Sin materias</option>';
+
+            if (grados.length && materias.length) cargarEstudiantes();
         }
-        
-        renderTabla();
-        
-        // Mostrar mensaje de qué se cargó
-        console.log(`✅ Cargados ${estudiantesList.length} estudiantes para materia ${materiaId} en fecha ${fecha}`);
-    }, 300);
-}
-        
+
+        async function cargarEstudiantes() {
+            const idGrado = document.getElementById('filtroGrado').value;
+            const idMateria = document.getElementById('filtroMateria').value;
+            const fecha = document.getElementById('filtroFecha').value;
+
+            if (!idGrado || !idMateria || !fecha) return;
+
+            const tbody = document.getElementById('tablaAsistencias');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando desde la API...</td></tr>';
+
+            const data = await window.api.getAsistenciasGrado(idGrado, fecha, idMateria);
+
+            if (!data || !data.success) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No se pudo cargar el listado.</td></tr>';
+                estudiantesList = [];
+                return;
+            }
+
+            asistenciasActuales = {};
+            estudiantesList = (data.asistencias || []).map(item => {
+                const est = item.estudiante;
+                const presenteActual = item.asistencia ? item.asistencia.presente : true;
+                asistenciasActuales[est.id_estudiante] = presenteActual;
+                return {
+                    id: est.id_estudiante,
+                    nombre: est.usuario ? est.usuario.nombre_completo : 'Sin nombre',
+                    documento: est.documento,
+                    presente: presenteActual,
+                    yaRegistrado: item.registrado
+                };
+            });
+
+            renderTabla();
+        }
+
         function renderTabla() {
-    const tbody = document.getElementById('tablaAsistencias');
-    let presentes = 0;
-    let ausentes = 0;
-    
-    if (!estudiantesList || estudiantesList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay estudiantes para esta materia</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = estudiantesList.map((e, idx) => {
-        const presente = asistenciasActuales[e.id] !== undefined ? asistenciasActuales[e.id] : e.presente;
-        if (presente) presentes++; else ausentes++;
-        
-        return `
-            <tr>
-                <td>${idx + 1}</td>
-                <td><strong>${e.nombre}</strong></td>
-                <td>${e.documento}</td>
-                <td>
-                    <label class="form-check">
-                        <input type="checkbox" ${presente ? 'checked' : ''} onchange="toggleAsistencia(${e.id}, this.checked)">
-                        <span class="badge ${presente ? 'badge-success' : 'badge-danger'}">${presente ? '✓ Presente' : '✗ Ausente'}</span>
-                    </label>
-                </td>
-                <td>
-                    ${!presente ? `<select class="form-select" style="padding:0.5rem" data-estudiante="${e.id}" onchange="guardarJustificacion(${e.id}, this.value)">
-                        <option value="">Sin justificar</option>
-                        <option value="enfermedad">Enfermedad</option>
-                        <option value="permiso">Permiso</option>
-                    </select>` : '-'}
-                </td>
-            </tr>
-        `;
-    }).join('');
-    
-    document.getElementById('totalEstudiantes').textContent = estudiantesList.length;
-    document.getElementById('totalPresentes').textContent = presentes;
-    document.getElementById('totalAusentes').textContent = ausentes;
-}
-        
+            const tbody = document.getElementById('tablaAsistencias');
+            let presentes = 0;
+            let ausentes = 0;
+
+            if (!estudiantesList || estudiantesList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay estudiantes activos en este grado</td></tr>';
+                document.getElementById('totalEstudiantes').textContent = 0;
+                document.getElementById('totalPresentes').textContent = 0;
+                document.getElementById('totalAusentes').textContent = 0;
+                return;
+            }
+
+            tbody.innerHTML = estudiantesList.map((e, idx) => {
+                const presente = asistenciasActuales[e.id] !== undefined ? asistenciasActuales[e.id] : e.presente;
+                if (presente) presentes++; else ausentes++;
+
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${e.nombre}</strong>${e.yaRegistrado ? ' <small style="color:var(--text-light)">(ya registrado)</small>' : ''}</td>
+                        <td>${e.documento}</td>
+                        <td>
+                            <label class="form-check">
+                                <input type="checkbox" ${presente ? 'checked' : ''} onchange="toggleAsistencia(${e.id}, this.checked)">
+                                <span class="badge ${presente ? 'badge-success' : 'badge-danger'}">${presente ? '✓ Presente' : '✗ Ausente'}</span>
+                            </label>
+                        </td>
+                        <td>
+                            ${!presente ? `<select class="form-select" style="padding:0.5rem" data-estudiante="${e.id}" onchange="guardarJustificacion(${e.id}, this.value)">
+                                <option value="">Sin justificar</option>
+                                <option value="enfermedad">Enfermedad</option>
+                                <option value="permiso">Permiso</option>
+                            </select>` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('totalEstudiantes').textContent = estudiantesList.length;
+            document.getElementById('totalPresentes').textContent = presentes;
+            document.getElementById('totalAusentes').textContent = ausentes;
+        }
+
         function toggleAsistencia(estudianteId, presente) {
             asistenciasActuales[estudianteId] = presente;
             renderTabla();
         }
-        
+
         function guardarJustificacion(estudianteId, justificacion) {
             console.log(`Justificación para ${estudianteId}: ${justificacion}`);
         }
-        
+
         async function guardarAsistencias() {
             const fecha = document.getElementById('filtroFecha').value || new Date().toISOString().split('T')[0];
-            const materiaId = document.getElementById('filtroMateria').value;
-            
+            const idMateria = document.getElementById('filtroMateria').value;
+
+            if (!idMateria || !estudiantesList.length) {
+                alert('Selecciona grado, materia y carga la lista primero.');
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="guardarAsistencias()"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+
             const asistenciasList = estudiantesList.map(e => ({
                 id_estudiante: e.id,
                 presente: asistenciasActuales[e.id] !== undefined ? asistenciasActuales[e.id] : e.presente
             }));
-            
+
             const result = await window.api.registrarAsistenciasMasivas({
-                id_materia: parseInt(materiaId),
+                id_materia: parseInt(idMateria),
                 fecha: fecha,
                 asistencias: asistenciasList
             });
-            
+
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar Asistencias'; }
+
             if (result.success) {
                 alert('✅ Asistencias guardadas exitosamente');
+                cargarEstudiantes();
             } else {
                 alert('❌ Error al guardar: ' + (result.data?.message || 'Error de conexión'));
             }
         }
-        
+
         document.getElementById('filtroFecha').value = new Date().toISOString().split('T')[0];
         document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); window.api.logout(); });
-        
-        cargarEstudiantes();
+
+        inicializarSelects();
     </script>
 </body>
 </html>

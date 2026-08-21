@@ -5,6 +5,7 @@ Endpoints para: Registrar, consultar, modificar y eliminar asistencias
 
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
+from sqlalchemy.exc import IntegrityError
 from models import db, Asistencia, Estudiante, Materia, Horario, Grado
 from auth import token_required, role_required
 
@@ -115,30 +116,49 @@ def registrar_asistencia_masiva(usuario_actual):
             justificacion = item.get('justificacion')
             tipo_justificacion = item.get('tipo_justificacion', 'ninguna')
             
-            asistencia_existente = Asistencia.query.filter_by(
-                id_estudiante=id_estudiante,
-                id_materia=id_materia,
-                fecha=fecha_asistencia
-            ).first()
-            
-            if asistencia_existente:
-                asistencia_existente.presente = presente
-                asistencia_existente.justificacion = justificacion
-                asistencia_existente.tipo_justificacion = tipo_justificacion
-                asistencia_existente.registrado_por = usuario_actual.id_usuario
-                registros_actualizados += 1
-            else:
-                nueva_asistencia = Asistencia(
+            # Usamos un savepoint por registro: si el INSERT choca con un
+            # registro que ya existe (duplicado por doble clic, condición de
+            # carrera, o un guardado previo), lo resolvemos como UPDATE en
+            # lugar de fallar toda la operación.
+            try:
+                with db.session.begin_nested():
+                    asistencia_existente = Asistencia.query.filter_by(
+                        id_estudiante=id_estudiante,
+                        id_materia=id_materia,
+                        fecha=fecha_asistencia
+                    ).with_for_update().first()
+                    
+                    if asistencia_existente:
+                        asistencia_existente.presente = presente
+                        asistencia_existente.justificacion = justificacion
+                        asistencia_existente.tipo_justificacion = tipo_justificacion
+                        asistencia_existente.registrado_por = usuario_actual.id_usuario
+                        registros_actualizados += 1
+                    else:
+                        nueva_asistencia = Asistencia(
+                            id_estudiante=id_estudiante,
+                            id_materia=id_materia,
+                            fecha=fecha_asistencia,
+                            presente=presente,
+                            justificacion=justificacion,
+                            tipo_justificacion=tipo_justificacion,
+                            registrado_por=usuario_actual.id_usuario
+                        )
+                        db.session.add(nueva_asistencia)
+                        registros_creados += 1
+            except IntegrityError:
+                # Ya existe (se creó entre el SELECT y el INSERT): lo actualizamos
+                asistencia_existente = Asistencia.query.filter_by(
                     id_estudiante=id_estudiante,
                     id_materia=id_materia,
-                    fecha=fecha_asistencia,
-                    presente=presente,
-                    justificacion=justificacion,
-                    tipo_justificacion=tipo_justificacion,
-                    registrado_por=usuario_actual.id_usuario
-                )
-                db.session.add(nueva_asistencia)
-                registros_creados += 1
+                    fecha=fecha_asistencia
+                ).first()
+                if asistencia_existente:
+                    asistencia_existente.presente = presente
+                    asistencia_existente.justificacion = justificacion
+                    asistencia_existente.tipo_justificacion = tipo_justificacion
+                    asistencia_existente.registrado_por = usuario_actual.id_usuario
+                    registros_actualizados += 1
         
         db.session.commit()
         
