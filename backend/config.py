@@ -6,7 +6,30 @@ Variables de configuraciÃ³n para Flask, Base de Datos y JWT
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+import os
+from urllib.parse import urlparse
+from datetime import timedelta
+from dotenv import load_dotenv
 
+load_dotenv()
+
+# ==================== PARSE RAILWAY DATABASE_URL ====================
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Railway provides DATABASE_URL in format: mysql+pymysql://user:pass@host:port/dbname
+    parsed = urlparse(database_url)
+    DB_HOST = parsed.hostname
+    DB_USER = parsed.username
+    DB_PASSWORD = parsed.password
+    DB_NAME = parsed.path.lstrip('/')
+    DB_PORT = parsed.port or 3306
+else:
+    # Fallback to individual env vars
+    DB_HOST = os.environ.get('DB_HOST', '127.0.0.1')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+    DB_NAME = os.environ.get('DB_NAME', 'sga_nuevo_amanecer')
+    DB_PORT = os.environ.get('DB_PORT', '3307')
 # Carga las variables definidas en el archivo .env (que NO se sube a Git)
 load_dotenv()
 
