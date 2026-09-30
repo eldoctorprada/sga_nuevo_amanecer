@@ -12,7 +12,8 @@ class Config:
     """Configuración principal del sistema"""
     
     # ==================== BASE DE DATOS ====================
-    # Usar DATABASE_URL si está disponible (Railway)
+    # En Railway: usar DATABASE_URL
+    # En local: usar la conexión por defecto
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
         'mysql+pymysql://root:@127.0.0.1:3306/sga_nuevo_amanecer'
@@ -26,7 +27,7 @@ class Config:
     }
     
     # ==================== JWT ====================
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'clave-temporal-solo-para-desarrollo-cambiala')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'clave-temporal-solo-para-desarrollo')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
     
@@ -42,11 +43,9 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=4)
 
 class TestingConfig(Config):
     TESTING = True
-    DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/sga_test'
 
 config = {
