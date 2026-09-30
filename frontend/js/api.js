@@ -4,7 +4,7 @@
  */
 
 // Configuración
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 let authToken = localStorage.getItem('access_token');
 let refreshToken = localStorage.getItem('refresh_token');
 
