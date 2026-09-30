@@ -40,8 +40,5 @@ print("✅ WSGI LISTO - Gunicorn puede usar el app")
 print("="*70 + "\n")
 sys.stdout.flush()
 
-# El app object que Gunicorn va a usar
-# NO AGREGAR NADA MAS ABAJO DE ESTA LINEA
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
