@@ -32,19 +32,23 @@ def create_app(config_name='default'):
     # Cargar configuración (config.py ya lee las credenciales desde .env)
     app.config.from_object(config[config_name])
     
-    # ==================== DEBUG RAILWAY ====================
-    print(f"\n🔍 DATABASE_URL disponible: {os.environ.get('DATABASE_URL')}")
-    print(f"🔍 CONFIG URI actual: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
-    
-    # Si DATABASE_URL existe (Railway), usarla directamente
-    if os.environ.get('DATABASE_URL'):
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-        print(f"✅ SOBREESCRIBIENDO con DATABASE_URL")
+    # ==================== DATABASE URL OVERRIDE (RAILWAY) ====================
+    database_url = os.environ.get('DATABASE_URL')
+
+    if database_url:
+        # Si estamos en Railway, usar DATABASE_URL
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        print(f"\n✅ DATABASE_URL encontrada - usando configuración de Railway")
     else:
-        print(f"❌ DATABASE_URL NO ENCONTRADA - usando fallback")
-    
-    print(f"🔍 CONFIG URI final: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
-    # ==================== FIN DEBUG ====================
+        # Fallback para desarrollo local
+        print(f"\n⚠️  DATABASE_URL no encontrada - usando configuración local (127.0.0.1)")
+
+    # Log final de la URI configurada (sin contraseña)
+    uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'NO CONFIGURADA')
+    if uri and uri != 'NO CONFIGURADA':
+        masked_uri = uri[:30] + '***' + uri[-30:] if len(uri) > 60 else uri
+        print(f"📌 URI configurada: {masked_uri}")
+    # ==================== FIN DATABASE URL ====================
     
     # Inicializar extensiones
     CORS(app)  # Permite peticiones desde el frontend
@@ -139,15 +143,20 @@ def init_database(app):
 if __name__ == '__main__':
     # Crear aplicación
     app = create_app('development')
-    
+
     # Crear las tablas si no existen (alternativa al schema.sql)
-    with app.app_context():
-        db.create_all()
-        print("📦 Tablas creadas/verificadas")
-    
+    # Envuelto en try/except para no bloquear el servidor si falla
+    try:
+        with app.app_context():
+            db.create_all()
+            print("📦 Tablas creadas/verificadas")
+    except Exception as e:
+        print(f"⚠️  No se pudieron crear las tablas: {str(e)}")
+        print("   El servidor seguirá ejecutándose")
+
     # Obtener el puerto desde variable de entorno o usar 5000
     port = int(os.environ.get('PORT', 5000))
-    
+
     print("\n" + "=" * 60)
     print("🚀 SISTEMA DE GESTIÓN ACADÉMICA 'NUEVO AMANECER'")
     print("=" * 60)
@@ -161,6 +170,6 @@ if __name__ == '__main__':
     print("\n⚠️  NOTA: Ejecuta primero el script schema.sql en MySQL")
     print("   para crear la base de datos con datos iniciales")
     print("=" * 60)
-    
+
     # Ejecutar servidor
     app.run(host='0.0.0.0', port=port, debug=True)
