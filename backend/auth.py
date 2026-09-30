@@ -176,7 +176,8 @@ def token_required(f):
 def role_required(allowed_roles: list):
     """
     DECORADOR: Protege una ruta requiriendo un rol específico
-    Debe usarse DESPUÉS de @token_required
+    Debe usarse DE
+    cdSPUÉS de @token_required
     
     Uso: @role_required(['administrativo', 'docente'])
     
