@@ -1,5 +1,6 @@
 ﻿"""
 CONFIGURACIÓN DEL SISTEMA SGA
+Variables de configuración para Flask, Base de Datos y JWT
 """
 
 import os
@@ -12,12 +13,8 @@ class Config:
     """Configuración principal del sistema"""
     
     # ==================== BASE DE DATOS ====================
-    # En Railway: usar DATABASE_URL
-    # En local: usar la conexión por defecto
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL',
-        'mysql+pymysql://root:@127.0.0.1:3306/sga_nuevo_amanecer'
-    )
+    # Fallback para desarrollo local
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/sga_nuevo_amanecer'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -27,7 +24,7 @@ class Config:
     }
     
     # ==================== JWT ====================
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'clave-temporal-solo-para-desarrollo')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'clave-temporal-solo-para-desarrollo-cambiala')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
     
@@ -37,17 +34,23 @@ class Config:
     JSON_SORT_KEYS = False
 
 class DevelopmentConfig(Config):
+    """Configuración para entorno de desarrollo"""
     DEBUG = True
     TESTING = False
 
 class ProductionConfig(Config):
+    """Configuración para entorno de producción"""
     DEBUG = False
     TESTING = False
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=4)
 
 class TestingConfig(Config):
+    """Configuración para pruebas unitarias"""
     TESTING = True
+    DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/sga_test'
 
+# Diccionario de configuraciones disponibles
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
