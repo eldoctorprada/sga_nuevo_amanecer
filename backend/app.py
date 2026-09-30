@@ -32,13 +32,19 @@ def create_app(config_name='default'):
     # Cargar configuración (config.py ya lee las credenciales desde .env)
     app.config.from_object(config[config_name])
     
-    # ==================== WORKAROUND RAILWAY ====================
+        # ==================== DEBUG RAILWAY ====================
+    print(f"🔍 DATABASE_URL disponible: {os.environ.get('DATABASE_URL')}")
+    print(f"🔍 CONFIG URI actual: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+    
     # Si DATABASE_URL existe (Railway), usarla directamente
-    # Esto se evalúa EN TIEMPO DE EJECUCIÓN, no en tiempo de importación
     if os.environ.get('DATABASE_URL'):
         app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    # ==================== FIN WORKAROUND ====================
+        print(f"✅ SOBREESCRIBIENDO con DATABASE_URL")
+    else:
+        print(f"❌ DATABASE_URL NO ENCONTRADA - usando fallback")
     
+    print(f"🔍 CONFIG URI final: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+    # ==================== FIN DEBUG ====================
     # Inicializar extensiones
     CORS(app)  # Permite peticiones desde el frontend
     db.init_app(app)
