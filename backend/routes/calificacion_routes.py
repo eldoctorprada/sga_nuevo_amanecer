@@ -50,7 +50,33 @@ def registrar_calificacion(usuario_actual):
             periodo=data['periodo'],
             anio_academico=data['anio_academico']
         ).first()
-        
+
+        # Validar que la suma acumulada de porcentajes no supere el 100%
+        # (por estudiante, materia, periodo y anio academico). Corrige BUG-001.
+        suma_otros_query = db.session.query(
+            db.func.coalesce(db.func.sum(Calificacion.porcentaje), 0)
+        ).filter(
+            Calificacion.id_estudiante == data['id_estudiante'],
+            Calificacion.id_materia == data['id_materia'],
+            Calificacion.periodo == data['periodo'],
+            Calificacion.anio_academico == data['anio_academico']
+        )
+        if calificacion_existente:
+            # se va a reemplazar: excluir su porcentaje actual de la suma
+            suma_otros_query = suma_otros_query.filter(
+                Calificacion.id_calificacion != calificacion_existente.id_calificacion
+            )
+        suma_otros = float(suma_otros_query.scalar() or 0)
+
+        if suma_otros + porcentaje > 100:
+            disponible = round(100 - suma_otros, 1)
+            return jsonify({
+                'success': False,
+                'message': f'La suma de porcentajes de la materia superaria el 100%. '
+                           f'Ya hay {suma_otros}% asignado en este periodo; '
+                           f'porcentaje disponible: {disponible}%.'
+            }), 400
+
         if calificacion_existente:
             calificacion_existente.nota = nota
             calificacion_existente.porcentaje = porcentaje

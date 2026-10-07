@@ -188,21 +188,37 @@ def crear_horario(usuario_actual):
         hora_inicio = dt.strptime(data['hora_inicio'], '%H:%M').time()
         hora_fin = dt.strptime(data['hora_fin'], '%H:%M').time()
         
-        # Verificar solapamiento de horarios
+        # Verificar solapamiento de horarios en el mismo GRADO.
+        # Dos franjas [a, b) y [c, d) se cruzan si y solo si a < d y c < b.
         horario_existente = Horario.query.filter_by(
             dia_semana=data['dia_semana'],
             id_grado=data['id_grado'],
             periodo=data['periodo'],
             anio_academico=data['anio_academico']
         ).filter(
-            db.or_(
-                db.and_(Horario.hora_inicio <= hora_inicio, Horario.hora_fin > hora_inicio),
-                db.and_(Horario.hora_inicio < hora_fin, Horario.hora_fin >= hora_fin)
-            )
+            db.and_(Horario.hora_inicio < hora_fin, Horario.hora_fin > hora_inicio)
         ).first()
-        
+
         if horario_existente:
             return jsonify({'success': False, 'message': 'Ya existe un horario en ese día y hora'}), 400
+
+        # Verificar que el mismo DOCENTE no quede doble-agendado a la misma hora
+        # en otro grado (mismo dia, periodo y anio). Corrige BUG-002.
+        conflicto_docente = Horario.query.filter_by(
+            dia_semana=data['dia_semana'],
+            id_docente=data['id_docente'],
+            periodo=data['periodo'],
+            anio_academico=data['anio_academico']
+        ).filter(
+            db.and_(Horario.hora_inicio < hora_fin, Horario.hora_fin > hora_inicio)
+        ).first()
+
+        if conflicto_docente:
+            return jsonify({
+                'success': False,
+                'message': 'El docente ya tiene una clase asignada en ese día y horario '
+                           '(posible traslape entre grados)'
+            }), 400
         
         nuevo_horario = Horario(
             dia_semana=data['dia_semana'],
