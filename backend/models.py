@@ -197,7 +197,7 @@ class Estudiante(db.Model):
         promedios = []
         for materia_id, datos in materias.items():
             if datos['ponderacion_total'] > 0:
-                promedio = datos['suma']
+                promedio = datos['suma'] * 100 / datos['ponderacion_total']
                 promedios.append(promedio)
         
         if promedios:

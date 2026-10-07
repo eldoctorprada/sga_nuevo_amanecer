@@ -73,9 +73,11 @@ def reporte_calificaciones_estudiante(usuario_actual, id_estudiante):
         # Calcular promedios
         for m in materias.values():
             suma_ponderada = 0
+            ponderacion_total = 0
             for n in m['notas']:
                 suma_ponderada += n['nota'] * (n['porcentaje'] / 100)
-            m['promedio'] = round(suma_ponderada, 2)
+                ponderacion_total += n['porcentaje']
+            m['promedio'] = round(suma_ponderada * 100 / ponderacion_total, 2) if ponderacion_total > 0 else 0
         
         formato = request.args.get('formato', 'json')
         
@@ -270,7 +272,7 @@ def reporte_rendimiento_grado(usuario_actual, id_grado):
                 suma_ponderada += float(c.nota) * (float(c.porcentaje) / 100)
                 ponderacion_total += float(c.porcentaje)
             
-            promedio = round(suma_ponderada, 2) if ponderacion_total > 0 else 0
+            promedio = round(suma_ponderada * 100 / ponderacion_total, 2) if ponderacion_total > 0 else 0
             suma_promedios += promedio
             
             resultados.append({
