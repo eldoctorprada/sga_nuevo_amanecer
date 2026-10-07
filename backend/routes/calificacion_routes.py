@@ -198,7 +198,15 @@ def registrar_calificaciones_masivas(usuario_actual):
             id_estudiante = item.get('id_estudiante')
             nota = float(item.get('nota', 0))
             observacion = item.get('observacion')
-            porcentaje = item.get('porcentaje', 100 / len(calificaciones_data))
+            porcentaje = float(item.get('porcentaje', 100 / len(calificaciones_data)))
+
+            # Validar rango de nota (0-5) y porcentaje (1-100) tambien en carga masiva
+            if nota < 0 or nota > 5:
+                db.session.rollback()
+                return jsonify({'success': False, 'message': f'La nota del estudiante {id_estudiante} debe estar entre 0 y 5'}), 400
+            if porcentaje <= 0 or porcentaje > 100:
+                db.session.rollback()
+                return jsonify({'success': False, 'message': 'El porcentaje debe estar entre 1 y 100'}), 400
             
             calificacion_existente = Calificacion.query.filter_by(
                 id_estudiante=id_estudiante,

@@ -384,7 +384,7 @@ class Calificacion(db.Model):
     id_materia = db.Column(db.Integer, db.ForeignKey('materia.id_materia'), nullable=False)
     tipo_evaluacion = db.Column(db.Enum(TipoEvaluacion, values_callable=enum_values), nullable=False)
     nota = db.Column(db.Numeric(3, 1), nullable=False)
-    porcentaje = db.Column(db.Numeric(3, 1), nullable=False)
+    porcentaje = db.Column(db.Numeric(4, 1), nullable=False)
     periodo = db.Column(db.Enum(Periodo, values_callable=enum_values), nullable=False)
     anio_academico = db.Column(db.Integer, nullable=False)
     observacion = db.Column(db.Text)
