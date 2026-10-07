@@ -146,6 +146,26 @@ def setup_database(app):
         # 1) Crear todas las tablas si no existen
         db.create_all()
         print("📦 Tablas creadas/verificadas")
+        # Migracion automatica: ampliar 'porcentaje' a DECIMAL(4,1) si quedo como (3,1).
+        # Las tablas creadas antes no admiten 100.0. Es idempotente y seguro.
+        try:
+            from sqlalchemy import text
+            precision = db.session.execute(text(
+                "SELECT NUMERIC_PRECISION FROM information_schema.COLUMNS "
+                "WHERE TABLE_NAME = 'calificacion' AND COLUMN_NAME = 'porcentaje' "
+                "AND TABLE_SCHEMA = DATABASE()"
+            )).scalar()
+            if precision is not None and int(precision) < 4:
+                db.session.execute(text(
+                    "ALTER TABLE calificacion MODIFY porcentaje DECIMAL(4,1) NOT NULL"
+                ))
+                db.session.commit()
+                print("🔧 Columna 'porcentaje' ampliada a DECIMAL(4,1)")
+            else:
+                print("✅ Columna 'porcentaje' ya admite 100%")
+        except Exception as e:
+            db.session.rollback()
+            print(f"⚠️  No se pudo verificar/ampliar 'porcentaje': {e}")
 
         # 2) Si ya hay datos, no volver a sembrar
         if Usuario.query.count() > 0:
