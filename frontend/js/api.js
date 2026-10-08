@@ -629,6 +629,14 @@ async function getMaterias() {
 }
 
 /**
+ * Lista los docentes (id_docente + nombre) para asignarlos en horarios
+ */
+async function getDocentes() {
+    const result = await apiRequest('/docentes');
+    return result.success ? result.data.docentes : [];
+}
+
+/**
  * Lista el directorio de contactos (para elegir destinatarios de mensajes)
  */
 async function getDirectorio() {
@@ -692,6 +700,7 @@ async function getDirectorio() {
     // Catálogo
     getGrados,
     getMaterias,
+    getDocentes,
     getDirectorio
 };
 // ==================== ELIMINAR ASISTENCIA ====================

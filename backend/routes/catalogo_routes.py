@@ -5,8 +5,8 @@ Se usan para poblar selects en el frontend (Calificaciones, Horarios, etc.)
 """
 
 from flask import Blueprint, jsonify
-from models import Grado, Materia, Usuario
-from auth import token_required
+from models import Grado, Materia, Usuario, Docente
+from auth import token_required, role_required
 
 catalogo_bp = Blueprint('catalogo', __name__, url_prefix='/api')
 
@@ -71,6 +71,34 @@ def listar_directorio(usuario_actual):
                     'tipo_usuario': u.tipo_usuario
                 }
                 for u in usuarios if u.id_usuario != usuario_actual.id_usuario
+            ]
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ==================== LISTAR DOCENTES ====================
+
+@catalogo_bp.route('/docentes', methods=['GET'])
+@token_required
+@role_required(['administrativo'])
+def listar_docentes(usuario_actual):
+    """
+    GET /api/docentes
+    Lista los docentes activos con su id_docente y nombre, para asignarlos
+    al crear horarios desde la interfaz.
+    """
+    try:
+        docentes = Docente.query.join(Usuario).filter(Usuario.activo == True).all()
+        return jsonify({
+            'success': True,
+            'docentes': [
+                {
+                    'id_docente': d.id_docente,
+                    'nombre_completo': f'{d.usuario.nombre} {d.usuario.apellido}',
+                    'especialidad': d.especialidad
+                }
+                for d in docentes
             ]
         }), 200
     except Exception as e:

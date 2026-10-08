@@ -72,6 +72,61 @@
                 </div>
             </section>
 
+            <section class="card mt-3" id="seccionCrearHorario" style="display:none;">
+                <h2 style="margin-top:0;"><i class="fas fa-plus-circle"></i> Agregar horario</h2>
+                <p class="top-bar-subtitle" style="margin-bottom:1rem;">Asigna una clase a un docente. El sistema evita choques en el mismo grado y del mismo docente entre grados.</p>
+                <div id="msgHorario"></div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">🎓 Grado</label>
+                        <select class="form-select" id="crearGrado"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📚 Materia</label>
+                        <select class="form-select" id="crearMateria"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🧑‍🏫 Docente</label>
+                        <select class="form-select" id="crearDocente"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📅 Día</label>
+                        <select class="form-select" id="crearDia">
+                            <option value="lunes">Lunes</option>
+                            <option value="martes">Martes</option>
+                            <option value="miercoles">Miércoles</option>
+                            <option value="jueves">Jueves</option>
+                            <option value="viernes">Viernes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🕐 Hora inicio</label>
+                        <input type="time" class="form-input" id="crearHoraInicio" value="07:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">🕑 Hora fin</label>
+                        <input type="time" class="form-input" id="crearHoraFin" value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📅 Período</label>
+                        <select class="form-select" id="crearPeriodo">
+                            <option value="1">Primer Trimestre</option>
+                            <option value="2">Segundo Trimestre</option>
+                            <option value="3">Tercer Trimestre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📍 Aula (opcional)</label>
+                        <input type="text" class="form-input" id="crearAula" placeholder="Ej: Aula 201">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button class="btn btn-primary" id="btnCrearHorario" style="width:100%;">
+                            <i class="fas fa-save"></i> Agregar horario
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             <section class="card mt-3">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle alert-icon"></i>
@@ -155,7 +210,79 @@
             window.api.logout();
         });
 
+        // ===== Crear horario (solo administrativo) =====
+        async function initCrearHorario() {
+            const user = window.api.getCurrentUser();
+            if (!user || user.tipo_usuario !== 'administrativo') return;
+            document.getElementById('seccionCrearHorario').style.display = 'block';
+
+            const [grados, materias, docentes] = await Promise.all([
+                window.api.getGrados(),
+                window.api.getMaterias(),
+                window.api.getDocentes()
+            ]);
+            document.getElementById('crearGrado').innerHTML =
+                grados.map(g => `<option value="${g.id_grado}">${g.nombre}</option>`).join('');
+            document.getElementById('crearMateria').innerHTML =
+                materias.map(m => `<option value="${m.id_materia}">${m.nombre}</option>`).join('');
+            document.getElementById('crearDocente').innerHTML =
+                docentes.map(d => `<option value="${d.id_docente}">${d.nombre_completo}</option>`).join('')
+                || '<option value="">Sin docentes</option>';
+
+            document.getElementById('btnCrearHorario').addEventListener('click', crearHorario);
+        }
+
+        function mostrarMensajeHorario(texto, tipo) {
+            const box = document.getElementById('msgHorario');
+            const clase = tipo === 'ok' ? 'alert-success' : 'alert-danger';
+            const icono = tipo === 'ok' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+            box.innerHTML = `<div class="alert ${clase}"><i class="fas ${icono} alert-icon"></i>` +
+                `<div class="alert-content"><p>${texto}</p></div></div>`;
+        }
+
+        async function crearHorario() {
+            const btn = document.getElementById('btnCrearHorario');
+            const data = {
+                dia_semana: document.getElementById('crearDia').value,
+                hora_inicio: document.getElementById('crearHoraInicio').value,
+                hora_fin: document.getElementById('crearHoraFin').value,
+                id_grado: parseInt(document.getElementById('crearGrado').value),
+                id_materia: parseInt(document.getElementById('crearMateria').value),
+                id_docente: parseInt(document.getElementById('crearDocente').value),
+                anio_academico: ANIO_ACADEMICO,
+                periodo: document.getElementById('crearPeriodo').value,
+                aula: document.getElementById('crearAula').value.trim()
+            };
+
+            if (!data.id_grado || !data.id_materia || !data.id_docente) {
+                mostrarMensajeHorario('Selecciona grado, materia y docente.', 'error');
+                return;
+            }
+            if (data.hora_inicio >= data.hora_fin) {
+                mostrarMensajeHorario('La hora de inicio debe ser menor que la hora de fin.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            const result = await window.api.guardarHorario(data);
+            btn.disabled = false;
+
+            if (result && result.success) {
+                mostrarMensajeHorario('Horario creado correctamente.', 'ok');
+                document.getElementById('crearAula').value = '';
+                if (String(data.id_grado) === document.getElementById('filtroGrado').value &&
+                    String(data.periodo) === document.getElementById('filtroPeriodo').value) {
+                    aplicarFiltros();
+                }
+            } else {
+                const msg = (result && result.data && result.data.message)
+                    ? result.data.message : 'No se pudo crear el horario.';
+                mostrarMensajeHorario(msg, 'error');
+            }
+        }
+
         inicializarGrados();
+        initCrearHorario();
     </script>
 </body>
 </html>
